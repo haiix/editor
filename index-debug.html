@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Haiix Editor(debug)</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" />
+    <link rel="stylesheet" href="./node_modules/codemirror/lib/codemirror.css" />
+    <link rel="stylesheet" href="./node_modules/codemirror/addon/lint/lint.css" />
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "codemirror": "./node_modules/codemirror/src/codemirror.js",
+          "codemirror/": "./node_modules/codemirror/",
+          "codemirror/lib/codemirror.css": "data:text/javascript,",
+          "codemirror/addon/lint/lint.css": "data:text/javascript,",
+          "jshint/dist/jshint.js": "data:text/javascript;base64,ZXhwb3J0IGRlZmF1bHQge30=",
+          "csslint/dist/csslint-node.js": "data:text/javascript;base64,ZXhwb3J0IGRlZmF1bHQge30="
+        }
+      }
+    </script>
+    <script src="./node_modules/jshint/dist/jshint.js"></script>
+    <script src="./node_modules/csslint/dist/csslint.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js"></script>
+    <script type="module">
+      import CodeMirror from './node_modules/codemirror/src/codemirror.js'
+      window.CodeMirror = CodeMirror
+    </script>
+    <script type="module" src="./src/index.mjs"></script>
+  </body>
+</html>
