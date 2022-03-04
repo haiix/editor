@@ -1,3 +1,4 @@
+/* global __BUILD_TIMESTAMP__ */
 import * as idb from './assets/idb.mjs'
 // importScripts('./src/idb.js')
 
@@ -19,6 +20,26 @@ class Main {
   }
 
   main () {
+    const base = this.base
+    self.addEventListener('install', event => {
+      console.log(__BUILD_TIMESTAMP__)
+      event.waitUntil(async function (main) {
+        const urls = [
+          base,
+          base + 'dist/main.js',
+          base + 'app.webmanifest',
+          base + 'icons/icon-32.png',
+          base + 'icons/icon-192.png',
+          base + 'icons/icon-512.png',
+          base + 'blank',
+          'https://fonts.googleapis.com/icon?family=Material+Icons&display=swap',
+          'https://fonts.gstatic.com/s/materialicons/v125/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2',
+          'https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js'
+        ]
+        const cache = await caches.open(main.namespace)
+        await cache.addAll(urls)
+      }(this))
+    })
     self.addEventListener('fetch', event => {
       event.respondWith(this.createResponse(event.request))
     })
@@ -49,7 +70,7 @@ class Main {
       }
       return new Response(res, resHeader)
     } else {
-      return fetch(url)
+      return await caches.match(req) || await fetch(url)
     }
   }
 }

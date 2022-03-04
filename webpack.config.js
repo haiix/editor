@@ -1,3 +1,5 @@
+const webpack  = require('webpack')
+
 module.exports = {
   mode: 'production',
   target: 'web',
@@ -21,5 +23,10 @@ module.exports = {
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    new webpack.DefinePlugin({
+       __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString())
+    })
+  ]
 }
