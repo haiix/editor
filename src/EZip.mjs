@@ -1,11 +1,11 @@
-//import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
-//import { BlobReader, BlobWriter } from '@zip.js/zip.js/lib/core/io.js'
-//import { ZipReader } from '@zip.js/zip.js/lib/core/zip-reader.js'
-//import { ZipWriter } from '@zip.js/zip.js/lib/core/zip-writer.js'
+/* global zip */
+// import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
+// import { BlobReader, BlobWriter } from '@zip.js/zip.js/lib/core/io.js'
+// import { ZipReader } from '@zip.js/zip.js/lib/core/zip-reader.js'
+// import { ZipWriter } from '@zip.js/zip.js/lib/core/zip-writer.js'
 import TComponent from './assets/TComponent.mjs'
 import style from './assets/style.mjs'
 import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
-import * as idb from './assets/idb.mjs'
 
 const EXT = '.zip'
 
@@ -82,7 +82,10 @@ const saveDialog = createDialog(class extends Dialog {
   }
 
   handleOK (event) {
-    this.resolve(Array.from(this.form.elements).reduce((obj, elem) => ((obj[elem.name] = elem.value), obj), {}))
+    this.resolve(Array.from(this.form.elements).reduce((obj, elem) => {
+      obj[elem.name] = elem.value
+      return obj
+    }, {}))
   }
 })
 
@@ -142,8 +145,6 @@ export default class EZip {
     TComponent.createElement(`<a href="${url}" download="${name}"></a>`).click()
     URL.revokeObjectURL(url)
   }
-
-
 
   async load (event) {
     const zipFile = await openFile(EXT)
@@ -216,7 +217,7 @@ export default class EZip {
       jpg: 'image/jpeg',
       svg: 'image/svg+xml',
       txt: 'text/plain',
-      md: 'text/markdown',
+      md: 'text/markdown'
     }[ext] || null
   }
 }

@@ -1,8 +1,9 @@
 import * as idb from './assets/idb.mjs'
-//importScripts('./src/idb.js')
+// importScripts('./src/idb.js')
 
 class Main {
   constructor () {
+    // TODO DB定義をメインスクリプトと共通化
     this.namespace = location.pathname.slice(1, location.pathname.lastIndexOf('/'))
     this.base = location.protocol + '//' + location.host + '/' + this.namespace + '/'
     this.dbSchema = {
@@ -11,7 +12,7 @@ class Main {
       onupgradeneeded (db, tx, version) {
         if (version < 1) {
           db.createObjectStore('files', { keyPath: 'path' })
-          //db.createObjectStore('settings', { keyPath: 'key' })
+          // db.createObjectStore('settings', { keyPath: 'key' })
         }
       }
     }
@@ -19,11 +20,12 @@ class Main {
 
   main () {
     self.addEventListener('fetch', event => {
-      event.respondWith(this.createResponse(event.request.url))
+      event.respondWith(this.createResponse(event.request))
     })
   }
 
-  async createResponse (url) {
+  async createResponse (req) {
+    let url = req.url
     const root = this.base + 'debug/'
     if ((url + '/').startsWith(root)) {
       url = url.split('?')[0].split('#')[0]
@@ -36,8 +38,16 @@ class Main {
         })
       )
 
-      return !fileData ? new Response(null, { status: 404 }) : !fileData.file ? new Response(null, { status: 301, headers: { Location: url + '/' } }) : new Response(fileData.file)
-
+      let res = null
+      let resHeader = null
+      if (!fileData) {
+        resHeader = { status: 404 }
+      } else if (!fileData.file) {
+        resHeader = { status: 301, headers: { Location: url + '/' } }
+      } else {
+        res = fileData.file
+      }
+      return new Response(res, resHeader)
     } else {
       return fetch(url)
     }

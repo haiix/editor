@@ -1,6 +1,6 @@
 import TComponent from './assets/TComponent.mjs'
 import seq from './assets/seq.mjs'
-//import * as customEventPolyfill from 'custom-event-polyfill'
+// import * as customEventPolyfill from 'custom-event-polyfill'
 
 export class TUl extends TComponent {
   template () {
@@ -110,6 +110,7 @@ export class TLi extends TComponent {
     this.value = (attr.value || '') + ''
     for (const [key, value] of Object.entries(attr)) {
       if (key === 'value') {
+        continue
       } else if (key === 'disabled' || key === 'current' || key === 'selected') {
         this[key] = value === key || value === true
       } else if (typeof value === 'function') {

@@ -114,7 +114,7 @@ class TreeBase extends TComponent {
     return this._list.childElementCount
   }
 
-  *[Symbol.iterator] () {
+  * [Symbol.iterator] () {
     let elem = this._list.firstChild
     while (elem) {
       yield TComponent.from(elem)

@@ -16,5 +16,10 @@
     "codemirror": "^5.65.1",
     "csslint": "^1.0.5",
     "jshint": "^2.13.4"
+  },
+  "standard": {
+    "env": [
+      "browser"
+    ]
   }
 }

@@ -13,7 +13,7 @@ import EZip from './EZip.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
 
-function *ancestorNodes (node) {
+function * ancestorNodes (node) {
   while (node) {
     yield node
     node = node.parentNode
@@ -261,6 +261,7 @@ export default class App extends TComponent {
     super()
     this.name = document.title
     this.version = '0.1.0'
+    // TODO DB定義をService Workerと共通化
     this.namespace = location.pathname.slice(1, location.pathname.lastIndexOf('/'))
     this.base = location.protocol + '//' + location.host + '/' + this.namespace + '/'
     this.firstTime = false
@@ -291,11 +292,11 @@ export default class App extends TComponent {
   }
 
   async main () {
-    //await idb.tx(this.dbSchema, ['settings'], 'readwrite', tx => {
-    //  const store = tx.objectStore('settings')
-    //  idb.put(store, { key: 'namespace', value: this.namespace })
-    //  idb.put(store, { key: 'base', value: this.base })
-    //})
+    // await idb.tx(this.dbSchema, ['settings'], 'readwrite', tx => {
+    //   const store = tx.objectStore('settings')
+    //   idb.put(store, { key: 'namespace', value: this.namespace })
+    //   idb.put(store, { key: 'base', value: this.base })
+    // })
 
     await this.updateFileTree()
     if (this.firstTime) {
@@ -393,7 +394,7 @@ export default class App extends TComponent {
     }
     if (item) this.fileTree.current = item
 
-    //await this.updateFileTree()
+    // await this.updateFileTree()
   }
 
   createFileTreeItem (name, isFolder) {
@@ -420,7 +421,7 @@ export default class App extends TComponent {
         range: IDBKeyRange.lowerBound(this.workspace + path),
         forEach: (fileData, cursor) => {
           if (!(fileData.path + '/').startsWith(this.workspace + path + '/')) return false
-          //console.log('rm ' + fileData.path)
+          // console.log('rm ' + fileData.path)
           cursor.delete(fileData)
 
           // タブが開いている場合は閉じる
@@ -436,7 +437,7 @@ export default class App extends TComponent {
       item.parentNode.removeChild(item)
     }
 
-    //await this.updateFileTree()
+    // await this.updateFileTree()
   }
 
   /**
@@ -473,10 +474,10 @@ export default class App extends TComponent {
           lineNumbers: true,
           extraKeys: { 'Ctrl-Space': 'autocomplete' },
           mode: { name: file.type, globalVars: true },
-          gutters: ["CodeMirror-lint-markers"],
+          gutters: ['CodeMirror-lint-markers'],
           lint: {
             esversion: 11,
-            asi: true, // セミコロンを無視 (TODO: lintスタイルを設定できるようにしたほうがいいかもしれない)
+            asi: true // セミコロンを無視 (TODO: lintスタイルを設定できるようにしたほうがいいかもしれない)
           }
         })
 
@@ -487,7 +488,7 @@ export default class App extends TComponent {
           flattenSpans: false,
           token (stream, state) {
             if (stream.match('　')) return 'ideographic-space'
-            while (stream.next() != null && !stream.match('　', false)) {}
+            while (stream.next() != null && !stream.match('　', false));
             return null
           }
         })
@@ -496,10 +497,12 @@ export default class App extends TComponent {
           switch (event.keyCode) {
             // 改行時、右側スペースをトリムする
             case 13:
+            {
               const cursor = cm.getCursor()
               const str = cm.getLine(cursor.line).slice(0, cursor.ch)
               cm.replaceRange(str.trimRight(), { line: cursor.line, ch: 0 }, cursor)
               break
+            }
           }
         })
         cm.on('change', (cm, event) => {
@@ -564,7 +567,7 @@ export default class App extends TComponent {
   }
 
   handleKeyDown (event) {
-    //console.log('KeyCode: ' + event.keyCode)
+    // console.log('KeyCode: ' + event.keyCode)
     switch (event.keyCode) {
       case 83: // s
         if (event.ctrlKey) {
@@ -579,7 +582,7 @@ export default class App extends TComponent {
   }
 
   handleFileTreeKeyDown (event) {
-    //console.log('KeyCode: ' + event.keyCode)
+    // console.log('KeyCode: ' + event.keyCode)
     switch (event.keyCode) {
       case 13: // Enter
         return this.command('open')
@@ -636,7 +639,7 @@ export default class App extends TComponent {
       seq(item).find(
         cItem => cItem.text === name) ||
         this.fileTreeInsert(item, this.createFileTreeItem(name, true)
-      )
+        )
     , this.fileTree)
   }
 
@@ -675,49 +678,45 @@ export default class App extends TComponent {
       jpg: 'image/jpeg',
       svg: 'image/svg+xml',
       txt: 'text/plain',
-      md: 'text/markdown',
+      md: 'text/markdown'
     }[ext] || null
   }
 
   async command (command) {
     switch (command) {
       case 'newFile':
-        {
-          const name = await this.inputFileName('ファイル名', '', '新規ファイル')
-          if (!name) break
+      {
+        const name = await this.inputFileName('ファイル名', '', '新規ファイル')
+        if (!name) break
 
-          const type = this.getFileType(name)
-          return this.addFile({ path: this.getFileTreeFolderPath() + name, file: new Blob([''], { type }) })
-        }
-        break
+        const type = this.getFileType(name)
+        return this.addFile({ path: this.getFileTreeFolderPath() + name, file: new Blob([''], { type }) })
+      }
       case 'newFolder':
-        {
-          const name = await this.inputFileName('フォルダー名', '', '新規フォルダー')
-          if (!name) break
+      {
+        const name = await this.inputFileName('フォルダー名', '', '新規フォルダー')
+        if (!name) break
 
-          return this.addFile({ path: this.getFileTreeFolderPath() + name, file: null })
-        }
-        break
+        return this.addFile({ path: this.getFileTreeFolderPath() + name, file: null })
+      }
       case 'rename':
-        {
-          const prevName = this.fileTree.current.text
-          const isFolder = this.fileTree.current.isExpandable
+      {
+        const prevName = this.fileTree.current.text
+        const isFolder = this.fileTree.current.isExpandable
 
-          const newName = await this.inputFileName(isFolder ? 'フォルダー名' : 'ファイル名', prevName, '名前の変更')
-          if (!newName) return
+        const newName = await this.inputFileName(isFolder ? 'フォルダー名' : 'ファイル名', prevName, '名前の変更')
+        if (!newName) return
 
-          let path = this.getFileTreePath(this.fileTree.current.parentNode)
-          if (path !== '') path += '/'
-          return this.fileListMove(path + prevName, path + newName)
-        }
-        break
+        let path = this.getFileTreePath(this.fileTree.current.parentNode)
+        if (path !== '') path += '/'
+        return this.fileListMove(path + prevName, path + newName)
+      }
       case 'delete':
-        {
-          const isFolder = this.fileTree.current.isExpandable
-          if (!await confirm((isFolder ? 'フォルダー' : 'ファイル') + ' "' + this.fileTree.current.text +'" を削除しますか?')) break
-          return this.deleteCurrentFileOrFolder()
-        }
-        break
+      {
+        const isFolder = this.fileTree.current.isExpandable
+        if (!await confirm((isFolder ? 'フォルダー' : 'ファイル') + ' "' + this.fileTree.current.text + '" を削除しますか?')) break
+        return this.deleteCurrentFileOrFolder()
+      }
       case 'open':
         return this.openTab(this.getFileTreePath())
       default:
@@ -781,7 +780,7 @@ export default class App extends TComponent {
           const _prev = fileData.path
           const _new = this.workspace + newPath + fileData.path.slice((this.workspace + prevPath).length)
 
-          //console.log('mv ' + _prev + ' ' + _new)
+          // console.log('mv ' + _prev + ' ' + _new)
 
           fileData.path = _new
           if (fileData.file) {
@@ -809,7 +808,7 @@ export default class App extends TComponent {
       if (folder !== this.fileTree) folder.expand()
     }
 
-    //await this.updateFileTree()
+    // await this.updateFileTree()
   }
 
   fileTreeInsert (parentFolder, targetItem) {
@@ -829,8 +828,8 @@ export default class App extends TComponent {
     // ドラッグ対象
     const targetItem =
       seq(ancestorNodes(event.target))
-      .map(elem => TComponent.from(elem))
-      .find(item => item instanceof Tree.Item)
+        .map(elem => TComponent.from(elem))
+        .find(item => item instanceof Tree.Item)
     if (!targetItem) return
 
     let shadowElem = null
@@ -951,7 +950,7 @@ export default class App extends TComponent {
 
   handleSplitter (event) {
     const target = event.target.previousElementSibling
-    //const ox = event.pageX - window.getComputedStyle(target).width.slice(0, -2)
+    // const ox = event.pageX - window.getComputedStyle(target).width.slice(0, -2)
     const ox = event.pageX - target.style.width.slice(0, -2)
     hold({
       cursor: window.getComputedStyle(event.target).cursor,
@@ -1012,14 +1011,12 @@ export default class App extends TComponent {
       ${workspaces.map(data => `<div data-value="ws_${data.path}"><i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.workspace ? 'check' : '_'}</i><span>${data.label}</span></div>`).join('')}
     `)(event.target)
 
-/*
-    const value = await createContextMenu(`
-      <div data-value="ws_workspace1"><i class="material-icons" style="font-size: 16px;">check</i><span>ワークスペース1</span></div>
-      <div data-value="ws_workspace2"><i class="material-icons" style="font-size: 16px;">_</i><span>ワークスペース2</span></div>
-      <hr class="disabled" />
-      <div data-value="add"><i class="material-icons" style="font-size: 16px;">_</i><span>追加/削除...</span></div>
-    `)(event.target)
-*/
+    // const value = await createContextMenu(`
+    //   <div data-value="ws_workspace1"><i class="material-icons" style="font-size: 16px;">check</i><span>ワークスペース1</span></div>
+    //   <div data-value="ws_workspace2"><i class="material-icons" style="font-size: 16px;">_</i><span>ワークスペース2</span></div>
+    //   <hr class="disabled" />
+    //   <div data-value="add"><i class="material-icons" style="font-size: 16px;">_</i><span>追加/削除...</span></div>
+    // `)(event.target)
 
     event.target.classList.remove('selected')
 
@@ -1042,44 +1039,44 @@ export default class App extends TComponent {
     // 実行前に保存
     await Promise.all(seq(this.tabs).map(tab => this.saveTab(tab)))
 
-    //await new Promise(resolve => setTimeout(resolve, 100))
+    // await new Promise(resolve => setTimeout(resolve, 100))
 
     // index.htmlがnot foundになることがあるので対策
-    //await window.navigator.serviceWorker.register('./sw.js', { type: 'module' })
-    //for (const i of seq(4)) {
-    //  const res = await fetch('./debug/index.html')
-    //  if (res.status === 200) break
-    //}
+    // await window.navigator.serviceWorker.register('./sw.js', { type: 'module' })
+    // for (const i of seq(4)) {
+    //   const res = await fetch('./debug/index.html')
+    //   if (res.status === 200) break
+    // }
 
-    //const handlePopupLoad = event => {
-    //  if (event) event.target.removeEventListener(event.type, handlePopupLoad)
-    //  console.log('onload')
-    //  this.debugWindow.navigator.serviceWorker.register(app.base + 'sw.js', { type: 'module' })
-    //}
+    // const handlePopupLoad = event => {
+    //   if (event) event.target.removeEventListener(event.type, handlePopupLoad)
+    //   console.log('onload')
+    //   this.debugWindow.navigator.serviceWorker.register(app.base + 'sw.js', { type: 'module' })
+    // }
 
     if (this.debugWindow && !this.debugWindow.closed) {
-      //await this.debugWindow.fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
+      // await this.debugWindow.fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
       await this.debugWindow.fetch(this.base + 'blank') // not foundになることがあるので対策
       this.debugWindow.location.replace(this.base + 'debug/' + this.workspace)
-      //this.debugWindow.location.reload()
-      //handlePopupLoad()
+      // this.debugWindow.location.reload()
+      // handlePopupLoad()
     } else {
       this.debugWindow = window.open(this.base + 'blank', 'appWindow', 'width=400,height=400')
       this.debugWindow.onload = async function () {
         this.debugWindow.location.replace(this.base + 'debug/' + this.workspace)
       }.bind(this)
 
-      //await fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
-      //this.debugWindow = window.open(this.base + 'debug/' + this.workspace, 'appWindow', 'width=400,height=400')
+      // await fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
+      // this.debugWindow = window.open(this.base + 'debug/' + this.workspace, 'appWindow', 'width=400,height=400')
 
-      //await new Promise(resolve => setTimeout(resolve, 500))
-      //await this.debugWindow.fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
-      //this.debugWindow.location.href = this.base + 'debug/' + this.workspace
-      //this.debugWindow.addEventListener('load', handlePopupLoad)
+      // await new Promise(resolve => setTimeout(resolve, 500))
+      // await this.debugWindow.fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
+      // this.debugWindow.location.href = this.base + 'debug/' + this.workspace
+      // this.debugWindow.addEventListener('load', handlePopupLoad)
 
       // 親ウィンドウにフォーカスを戻す
       // https://stackoverflow.com/questions/2181464/i-need-to-open-a-new-window-in-the-background-with-javascript-and-make-sure-the
-      //window.open().close()
+      // window.open().close()
     }
   }
 
