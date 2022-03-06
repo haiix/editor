@@ -3,7 +3,7 @@
 // import { BlobReader, BlobWriter } from '@zip.js/zip.js/lib/core/io.js'
 // import { ZipReader } from '@zip.js/zip.js/lib/core/zip-reader.js'
 // import { ZipWriter } from '@zip.js/zip.js/lib/core/zip-writer.js'
-import TComponent from './assets/TComponent.mjs'
+import TComponent from '@haiix/tcomponent'
 import style from './assets/style.mjs'
 import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
 

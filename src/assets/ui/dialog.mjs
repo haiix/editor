@@ -1,4 +1,4 @@
-import TComponent from '../TComponent.mjs'
+import TComponent from '@haiix/tcomponent'
 import style from '../style.mjs'
 import { isTabbable, nextTabbable, previousTabbable } from '../focus.mjs'
 

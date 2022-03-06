@@ -1,5 +1,5 @@
-import TComponent from './assets/TComponent.mjs'
-import seq from './assets/seq.mjs'
+import TComponent from '@haiix/tcomponent'
+import seq from '@haiix/seq'
 // import * as customEventPolyfill from 'custom-event-polyfill'
 
 export class TUl extends TComponent {

@@ -1,4 +1,4 @@
-import TComponent from './assets/TComponent.mjs'
+import TComponent from '@haiix/tcomponent'
 import style from './assets/style.mjs'
 import { createDialog } from './assets/ui/dialog.mjs'
 

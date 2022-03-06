@@ -1,6 +1,6 @@
 import CodeMirror from 'codemirror'
-import TComponent from './assets/TComponent.mjs'
-import seq from './assets/seq.mjs'
+import TComponent from '@haiix/tcomponent'
+import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import * as styleDef from './assets/styledef.mjs'
 import * as idb from './assets/idb.mjs'

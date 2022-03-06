@@ -4,7 +4,7 @@
  * <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
  */
 
-import TComponent from '../TComponent.mjs'
+import TComponent from '@haiix/tcomponent'
 import style from '../style.mjs'
 // import * as customEventPolyfill from 'custom-event-polyfill'
 
