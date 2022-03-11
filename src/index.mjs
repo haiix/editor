@@ -9,8 +9,8 @@ import 'codemirror/mode/javascript/javascript.js'
 import 'codemirror/mode/css/css.js'
 import 'codemirror/mode/htmlmixed/htmlmixed.js'
 
-// import 'codemirror/addon/edit/matchbrackets.js'
-// import 'codemirror/addon/edit/closebrackets.js'
+import 'codemirror/addon/edit/matchbrackets.js'
+import 'codemirror/addon/edit/closebrackets.js'
 
 import 'codemirror/addon/lint/lint.css'
 import 'codemirror/addon/lint/lint.js'

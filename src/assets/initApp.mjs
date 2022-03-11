@@ -9,10 +9,10 @@ export default async function initApp (App) {
     app = new App()
     styleCtl.unlock()
     document.body.appendChild(app.element)
-    window.app = app
     const firstElem = nextTabbable(null, app.element)
     if (firstElem) firstElem.focus()
     if (app.main) await app.main()
+    window.app = app
     if (app.loop) {
       ;(async function loop (t) {
         try {

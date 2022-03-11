@@ -472,7 +472,9 @@ export default class App extends TComponent {
       requestAnimationFrame(() => {
         const cm = CodeMirror.fromTextArea(textarea, {
           lineNumbers: true,
-          extraKeys: { 'Ctrl-Space': 'autocomplete' },
+          matchBrackets: true,
+          autoCloseBrackets: true,
+          //extraKeys: { 'Ctrl-Space': 'autocomplete' },
           mode: { name: file.type, globalVars: true },
           gutters: ['CodeMirror-lint-markers'],
           lint: {
