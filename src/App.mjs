@@ -190,15 +190,18 @@ export default class App extends TComponent {
         height: 100%;
       }
       .${ukey} .CodeMirror-code > :not(:last-child) .CodeMirror-line::after {
+        position: absolute;
         content: "↓";
         color: #999;
         font-size: 9px;
       }
       .${ukey} .CodeMirror-code > :last-child .CodeMirror-line::after {
+        position: absolute;
         content: "[EOF]";
         color: #999;
       }
       .${ukey} .cm-tab::before {
+        position: absolute;
         content: '>';
         color: #999;
         font-size: 9px;
