@@ -1,4 +1,3 @@
-import CodeMirror from 'codemirror'
 import TComponent from '@haiix/tcomponent'
 import seq from '@haiix/seq'
 import style from './assets/style.mjs'
@@ -467,59 +466,65 @@ export default class App extends TComponent {
       image.src = URL.createObjectURL(file) // TODO close時にrevoke
       view.element.appendChild(image)
     } else {
-      // Editor
-      const textarea = document.createElement('textarea')
-      textarea.value = await file.text()
-      view.element.appendChild(textarea)
-
-      requestAnimationFrame(() => {
-        const cm = CodeMirror.fromTextArea(textarea, {
-          lineNumbers: true,
-          matchBrackets: true,
-          autoCloseBrackets: true,
-          //extraKeys: { 'Ctrl-Space': 'autocomplete' },
-          mode: { name: file.type, globalVars: true },
-          gutters: ['CodeMirror-lint-markers'],
-          lint: {
-            esversion: 11,
-            asi: true // セミコロンを無視 (TODO: lintスタイルを設定できるようにしたほうがいいかもしれない)
-          }
-        })
-
-        // 全角スペースの可視化
-        // https://codepen.io/natuan/pen/jzqMZE
-        // https://codemirror.net/doc/manual.html#addOverlay
-        cm.addOverlay({
-          flattenSpans: false,
-          token (stream, state) {
-            if (stream.match('　')) return 'ideographic-space'
-            while (stream.next() != null && !stream.match('　', false));
-            return null
-          }
-        })
-
-        cm.on('keydown', (cm, event) => {
-          switch (event.keyCode) {
-            // 改行時、右側スペースをトリムする
-            case 13:
-            {
-              const cursor = cm.getCursor()
-              const str = cm.getLine(cursor.line).slice(0, cursor.ch)
-              cm.replaceRange(str.trimRight(), { line: cursor.line, ch: 0 }, cursor)
-              break
-            }
-          }
-        })
-        cm.on('change', (cm, event) => {
-          this.tabs.current.isModified = true
-        })
-        tab.editor = cm
-      })
+      this.createEditor(tab)
     }
 
     this.tabs.element.appendChild(tab.element)
     this.views.element.appendChild(view.element)
     this.tabs.value = path
+  }
+
+  async createEditor (tab) {
+    const CodeMirror = (await import(/* webpackPrefetch: true */ './CodeMirror.mjs')).default
+
+    // Editor
+    const textarea = document.createElement('textarea')
+    textarea.value = await tab.file.text()
+    tab.view.element.appendChild(textarea)
+
+    //await new Promise(resolve => requestAnimationFrame(resolve))
+
+    const cm = CodeMirror.fromTextArea(textarea, {
+      lineNumbers: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      //extraKeys: { 'Ctrl-Space': 'autocomplete' },
+      mode: { name: tab.file.type, globalVars: true },
+      gutters: ['CodeMirror-lint-markers'],
+      lint: {
+        esversion: 11,
+        asi: true // セミコロンを無視 (TODO: lintスタイルを設定できるようにしたほうがいいかもしれない)
+      }
+    })
+
+    // 全角スペースの可視化
+    // https://codepen.io/natuan/pen/jzqMZE
+    // https://codemirror.net/doc/manual.html#addOverlay
+    cm.addOverlay({
+      flattenSpans: false,
+      token (stream, state) {
+        if (stream.match('　')) return 'ideographic-space'
+        while (stream.next() != null && !stream.match('　', false));
+        return null
+      }
+    })
+
+    cm.on('keydown', (cm, event) => {
+      switch (event.keyCode) {
+        // 改行時、右側スペースをトリムする
+        case 13:
+        {
+          const cursor = cm.getCursor()
+          const str = cm.getLine(cursor.line).slice(0, cursor.ch)
+          cm.replaceRange(str.trimRight(), { line: cursor.line, ch: 0 }, cursor)
+          break
+        }
+      }
+    })
+    cm.on('change', (cm, event) => {
+      this.tabs.current.isModified = true
+    })
+    tab.editor = cm
   }
 
   /**

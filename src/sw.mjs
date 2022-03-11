@@ -27,6 +27,8 @@ class Main {
         const urls = [
           base,
           base + 'dist/main.js',
+          base + 'dist/1.js',
+          base + 'dist/191.js',
           base + 'app.webmanifest',
           base + 'icons/icon-32.png',
           base + 'icons/icon-192.png',
