@@ -322,7 +322,7 @@ export default class App extends TComponent {
    * ファイルをIDBに追加する
    */
   async addFile (...fileDataList) {
-    this.idbFile.addFiles(fileDataList)
+    await this.idbFile.addFiles(fileDataList)
 
     // ファイルツリー
     let item = null
@@ -588,19 +588,23 @@ export default class App extends TComponent {
   async command (command) {
     switch (command) {
       case 'newFile':
-      {
-        const name = await this.inputFileName('ファイル名', '', '新規ファイル')
-        if (!name) break
-
-        const type = this.idbFile.getFileType(name)
-        return this.addFile({ path: this.getFileTreeFolderPath() + name, file: new Blob([''], { type }) })
-      }
       case 'newFolder':
       {
-        const name = await this.inputFileName('フォルダー名', '', '新規フォルダー')
-        if (!name) break
-
-        return this.addFile({ path: this.getFileTreeFolderPath() + name, file: null })
+        const typeName = command === 'newFile' ? 'ファイル' : 'フォルダー'
+        let name = ''
+        while (true) {
+          name = await this.inputFileName(`${typeName}名`, name, `新規${typeName}`)
+          if (!name) return
+          const type = this.idbFile.getFileType(name)
+          try {
+            await this.addFile({ path: this.getFileTreeFolderPath() + name, file: new Blob([''], { type }) })
+            return
+          } catch (error) {
+            if (error.name === 'ConstraintError') {
+              await alert('この場所には同名のファイルまたはフォルダーがあります', 'エラー')
+            }
+          }
+        }
       }
       case 'rename':
       {
