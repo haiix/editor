@@ -2,12 +2,12 @@ import TComponent from '@haiix/tcomponent'
 import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import * as styleDef from './assets/styledef.mjs'
-import * as idb from './assets/idb.mjs'
 import hold from './assets/hold.mjs'
 import Tree from './assets/ui/Tree.mjs'
 import { TUl, TLi } from './List.mjs'
 import { alert, confirm, prompt } from './assets/ui/dialog.mjs'
 import { createContextMenu } from './menu.mjs'
+import IdbFile from './IdbFile.mjs'
 import EZip from './EZip.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
@@ -266,20 +266,7 @@ export default class App extends TComponent {
     // TODO DB定義をService Workerと共通化
     this.namespace = location.pathname.slice(1, location.pathname.lastIndexOf('/'))
     this.base = location.protocol + '//' + location.host + '/' + this.namespace + '/'
-    this.firstTime = false
-    this.dbSchema = {
-      name: this.namespace,
-      version: 1,
-      onupgradeneeded: (db, tx, version) => {
-        if (version < 1) {
-          this.firstTime = true
-          const store = db.createObjectStore('files', { keyPath: 'id', autoIncrement: true })
-          store.createIndex('path', 'path', { unique: true })
-        }
-      }
-    }
-
-    this.workspace = 'workspace1/'
+    this.idbFile = new IdbFile(this.namespace)
 
     this.debugWindow = null
 
@@ -294,21 +281,10 @@ export default class App extends TComponent {
   }
 
   async main () {
-    // await idb.tx(this.dbSchema, ['settings'], 'readwrite', tx => {
-    //   const store = tx.objectStore('settings')
-    //   idb.put(store, { key: 'namespace', value: this.namespace })
-    //   idb.put(store, { key: 'base', value: this.base })
-    // })
-
     await this.updateFileTree()
-    if (this.firstTime) {
+    if (this.idbFile.firstTime) {
       // WorkSpace作成
-      await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
-        const store = tx.objectStore('files')
-        for (let i = 1; i <= 4; i++) {
-          idb.add(store, { path: 'workspace' + i, label: 'ワークスペース' + i })
-        }
-      })
+      await this.idbFile.initWorkSpaces()
 
       await this.addFile({
         path: 'index.html',
@@ -332,27 +308,8 @@ export default class App extends TComponent {
    * ファイルツリー全体をIDBから読み込んで更新する
    */
   async updateFileTree () {
-    const folders = []
-    const files = []
+    const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
 
-    // IDB
-    await idb.tx(this.dbSchema, ['files'], 'readonly', tx => (
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace),
-        forEach: fileData => {
-          if (!(fileData.path).startsWith(this.workspace)) return false
-          fileData = Object.assign({}, fileData, { path: fileData.path.slice(this.workspace.length) })
-          if (fileData.file) {
-            files.push(fileData)
-          } else {
-            folders.push(fileData)
-          }
-        }
-      })
-    ))
-
-    // ファイルツリー
     this.fileTree.textContent = ''
     for (const fileData of [...folders, ...files]) {
       const [folder, fileName] = this.getFileTreeFolderAndName(fileData.path)
@@ -361,31 +318,11 @@ export default class App extends TComponent {
     }
   }
 
-  async getAllWorkSpaces () {
-    const workSpaces = []
-    await idb.tx(this.dbSchema, ['files'], 'readonly', tx => (
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        forEach: fileData => {
-          if (!fileData.path.includes('/')) workSpaces.push(fileData)
-        }
-      })
-    ))
-    return workSpaces
-  }
-
   /**
    * ファイルをIDBに追加する
    */
   async addFile (...fileDataList) {
-    // IDB
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
-      const store = tx.objectStore('files')
-      for (const fileData of fileDataList) {
-        const _fileData = Object.assign({}, fileData, { path: this.workspace + fileData.path })
-        idb.put(store, _fileData)
-      }
-    })
+    this.idbFile.addFiles(fileDataList)
 
     // ファイルツリー
     let item = null
@@ -416,22 +353,13 @@ export default class App extends TComponent {
   async deleteCurrentFileOrFolder () {
     const path = this.getFileTreePath()
 
-    // IDB
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => (
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace + path),
-        forEach: (fileData, cursor) => {
-          if (!(fileData.path + '/').startsWith(this.workspace + path + '/')) return false
-          // console.log('rm ' + fileData.path)
-          cursor.delete(fileData)
+    const removedPaths = await this.idbFile.removeFile(path)
 
-          // タブが開いている場合は閉じる
-          const tab = this.tabs.get(fileData.path.slice(this.workspace.length))
-          if (tab) this.closeTab(tab)
-        }
-      })
-    ))
+    // タブが開いている場合は閉じる
+    for (const path of removedPaths) {
+      const tab = this.tabs.get(path)
+      if (tab) this.closeTab(tab)
+    }
 
     // ファイルツリー
     {
@@ -455,7 +383,7 @@ export default class App extends TComponent {
     }
 
     // IDBからロード
-    const { file } = await this.getFileFromIdb(path)
+    const file = await this.idbFile.getFile(path)
 
     const view = new TLi({ value: path })
     const tab = new EditorTab({ view, path, file })
@@ -482,13 +410,13 @@ export default class App extends TComponent {
     textarea.value = await tab.file.text()
     tab.view.element.appendChild(textarea)
 
-    //await new Promise(resolve => requestAnimationFrame(resolve))
+    // await new Promise(resolve => requestAnimationFrame(resolve))
 
     const cm = CodeMirror.fromTextArea(textarea, {
       lineNumbers: true,
       matchBrackets: true,
       autoCloseBrackets: true,
-      //extraKeys: { 'Ctrl-Space': 'autocomplete' },
+      // extraKeys: { 'Ctrl-Space': 'autocomplete' },
       mode: { name: tab.file.type, globalVars: true },
       gutters: ['CodeMirror-lint-markers'],
       lint: {
@@ -553,16 +481,7 @@ export default class App extends TComponent {
       // 保存
       const file = new Blob([tab.editor.getValue()], { type: prevFile.type })
       const path = tab.path
-      await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
-        return idb.cursor({
-          index: tx.objectStore('files').index('path'),
-          range: IDBKeyRange.only(this.workspace + path),
-          forEach (value, cursor) {
-            value.file = file
-            cursor.update(value)
-          }
-        })
-      })
+      await this.idbFile.putFile(path, file)
       tab.isModified = false
     }
   }
@@ -666,32 +585,6 @@ export default class App extends TComponent {
     return [folder, name]
   }
 
-  /**
-   * ファイル名からMIMEタイプを取得
-   * @param {string} name - ファイル名
-   * @return {string|null} - MIMEタイプ
-   * TODO: sw.jsと共通化
-   */
-  getFileType (name) {
-    const ext = name.slice(name.lastIndexOf('.') + 1)
-    return {
-      js: 'text/javascript',
-      mjs: 'text/javascript',
-      css: 'text/css',
-      html: 'text/html',
-      htm: 'text/html',
-      json: 'application/json',
-      xml: 'application/xml',
-      gif: 'image/gif',
-      png: 'image/png',
-      jpeg: 'image/jpeg',
-      jpg: 'image/jpeg',
-      svg: 'image/svg+xml',
-      txt: 'text/plain',
-      md: 'text/markdown'
-    }[ext] || null
-  }
-
   async command (command) {
     switch (command) {
       case 'newFile':
@@ -699,7 +592,7 @@ export default class App extends TComponent {
         const name = await this.inputFileName('ファイル名', '', '新規ファイル')
         if (!name) break
 
-        const type = this.getFileType(name)
+        const type = this.idbFile.getFileType(name)
         return this.addFile({ path: this.getFileTreeFolderPath() + name, file: new Blob([''], { type }) })
       }
       case 'newFolder':
@@ -755,14 +648,6 @@ export default class App extends TComponent {
     } while (true)
   }
 
-  getFileFromIdb (path) {
-    return idb.tx(this.dbSchema, ['files'], 'readonly', tx => idb.cursor({
-      index: tx.objectStore('files').index('path'),
-      range: IDBKeyRange.only(this.workspace + path),
-      forEach: value => value
-    }))
-  }
-
   /**
    * ファイル移動・リネーム
    */
@@ -775,39 +660,18 @@ export default class App extends TComponent {
     }
 
     // 受け側のフォルダーに同名のファイルまたはフォルダーがある場合は中断
-    if (await this.getFileFromIdb(newPath)) {
+    if (await this.idbFile.getFile(newPath)) {
       await alert('受け側のフォルダーに同名のファイルまたはフォルダーがあります。', '中断')
       return
     }
 
-    // IDB
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => (
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace + prevPath),
-        forEach: (fileData, cursor) => {
-          if (!(fileData.path + '/').startsWith(this.workspace + prevPath + '/')) return false
-          const _prev = fileData.path
-          const _new = this.workspace + newPath + fileData.path.slice((this.workspace + prevPath).length)
+    const movedPaths = await this.idbFile.moveFile(prevPath, newPath)
 
-          // console.log('mv ' + _prev + ' ' + _new)
-
-          fileData.path = _new
-          if (fileData.file) {
-            const prevType = this.getFileType(_prev)
-            const newType = this.getFileType(_new)
-            if (prevType !== newType) {
-              fileData.file = new Blob([fileData.file], { type: newType })
-            }
-          }
-          cursor.update(fileData)
-
-          // タブのパスを更新
-          const tab = seq(this.tabs).find(tab => tab.path === _prev.slice(this.workspace.length))
-          if (tab) tab.path = _new.slice(this.workspace.length)
-        }
-      })
-    ))
+    // タブのパスを更新
+    for (const [_prev, _new] of movedPaths) {
+      const tab = seq(this.tabs).find(tab => tab.path === _prev)
+      if (tab) tab.path = _new
+    }
 
     // ファイルツリー
     {
@@ -1015,10 +879,10 @@ export default class App extends TComponent {
     if (event.target.classList.contains('selected')) return
     event.target.classList.add('selected')
 
-    const workspaces = await this.getAllWorkSpaces()
+    const workspaces = await this.idbFile.getAllWorkSpaces()
 
     const value = await createContextMenu(`
-      ${workspaces.map(data => `<div data-value="ws_${data.path}"><i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.workspace ? 'check' : '_'}</i><span>${data.label}</span></div>`).join('')}
+      ${workspaces.map(data => `<div data-value="ws_${data.path}"><i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i><span>${data.label}</span></div>`).join('')}
     `)(event.target)
 
     // const value = await createContextMenu(`
@@ -1032,9 +896,9 @@ export default class App extends TComponent {
 
     if (!value) return
     if (value.slice(0, 3) === 'ws_') {
-      if (this.workspace === value.slice(3) + '/') return
+      if (this.idbFile.workspace === value.slice(3) + '/') return
       this.closeTab(...this.tabs)
-      this.workspace = value.slice(3) + '/'
+      this.idbFile.workspace = value.slice(3) + '/'
       await this.updateFileTree()
       return
     }
@@ -1065,23 +929,23 @@ export default class App extends TComponent {
     // }
 
     if (this.debugWindow && !this.debugWindow.closed) {
-      // await this.debugWindow.fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
+      // await this.debugWindow.fetch(this.base + 'debug/' + this.idbFile.workspace) // not foundになることがあるので対策
       await this.debugWindow.fetch(this.base + 'blank') // not foundになることがあるので対策
-      this.debugWindow.location.replace(this.base + 'debug/' + this.workspace)
+      this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
       // this.debugWindow.location.reload()
       // handlePopupLoad()
     } else {
       this.debugWindow = window.open(this.base + 'blank', 'appWindow', 'width=400,height=400')
       this.debugWindow.onload = async function () {
-        this.debugWindow.location.replace(this.base + 'debug/' + this.workspace)
+        this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
       }.bind(this)
 
-      // await fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
-      // this.debugWindow = window.open(this.base + 'debug/' + this.workspace, 'appWindow', 'width=400,height=400')
+      // await fetch(this.base + 'debug/' + this.idbFile.workspace) // not foundになることがあるので対策
+      // this.debugWindow = window.open(this.base + 'debug/' + this.idbFile.workspace, 'appWindow', 'width=400,height=400')
 
       // await new Promise(resolve => setTimeout(resolve, 500))
-      // await this.debugWindow.fetch(this.base + 'debug/' + this.workspace) // not foundになることがあるので対策
-      // this.debugWindow.location.href = this.base + 'debug/' + this.workspace
+      // await this.debugWindow.fetch(this.base + 'debug/' + this.idbFile.workspace) // not foundになることがあるので対策
+      // this.debugWindow.location.href = this.base + 'debug/' + this.idbFile.workspace
       // this.debugWindow.addEventListener('load', handlePopupLoad)
 
       // 親ウィンドウにフォーカスを戻す
@@ -1096,19 +960,7 @@ export default class App extends TComponent {
   saveProject () {
     const ezip = new EZip()
     return ezip.save(async function () {
-      const inputFiles = []
-      await idb.tx(this.dbSchema, ['files'], 'readonly', tx => (
-        idb.cursor({
-          index: tx.objectStore('files').index('path'),
-          range: IDBKeyRange.lowerBound(this.workspace),
-          forEach: fileData => {
-            if (!fileData.path.startsWith(this.workspace)) return false
-            fileData = Object.assign({}, fileData, { path: fileData.path.slice(this.workspace.length) })
-            inputFiles.push(fileData)
-          }
-        })
-      ))
-      return inputFiles
+      return this.idbFile.getAllFiles()
     }.bind(this))
   }
 
@@ -1119,16 +971,7 @@ export default class App extends TComponent {
     // タブをすべて閉じる
     this.closeTab(...this.tabs)
     // 現在のファイルリストを削除
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => (
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace),
-        forEach: (fileData, cursor) => {
-          if (!(fileData.path).startsWith(this.workspace)) return false
-          cursor.delete()
-        }
-      })
-    ))
+    this.idbFile.removeAllFiles()
     // ツリーを空にする
     this.fileTree.textContent = ''
   }
