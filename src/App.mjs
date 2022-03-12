@@ -602,6 +602,8 @@ export default class App extends TComponent {
           } catch (error) {
             if (error.name === 'ConstraintError') {
               await alert('この場所には同名のファイルまたはフォルダーがあります', 'エラー')
+            } else {
+              throw error
             }
           }
         }
