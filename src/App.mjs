@@ -3,11 +3,12 @@ import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import * as styleDef from './assets/styledef.mjs'
 import hold from './assets/hold.mjs'
-import Tree from './assets/ui/Tree.mjs'
 import { TUl, TLi } from './List.mjs'
 import { alert, confirm, prompt } from './assets/ui/dialog.mjs'
 import { createContextMenu } from './menu.mjs'
+import Tree from './assets/ui/Tree.mjs'
 import IdbFile from './IdbFile.mjs'
+import FileTree from './FileTree.mjs'
 import EZip from './EZip.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
@@ -214,7 +215,7 @@ export default class App extends TComponent {
         font-size: 14px;
       }
     `)
-    this.uses(Tree, TUl)
+    this.uses(FileTree, TUl)
     return `
       <div class="${ukey} fullscreen flex column"
         ondragover="return this.handleDragOver(event)"
@@ -236,7 +237,7 @@ export default class App extends TComponent {
 
         <div class="flex row fit">
           <!-- ファイルリスト -->
-          <ui-tree id="fileTree" class="file-tree" style="width: 160px;"
+          <file-tree id="fileTree" class="file-tree" style="width: 160px;"
             ondblclick="return this.handleFileTreeDoubleClick(event)"
             oncontextmenu="return this.handleFileTreeContextMenu(event)"
             onmousedown="return this.handleFileTreeMouseDown(event)"
@@ -309,13 +310,7 @@ export default class App extends TComponent {
    */
   async updateFileTree () {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
-
-    this.fileTree.textContent = ''
-    for (const fileData of [...folders, ...files]) {
-      const [folder, fileName] = this.getFileTreeFolderAndName(fileData.path)
-      const item = this.createFileTreeItem(fileName, !fileData.file)
-      folder.appendChild(item)
-    }
+    this.fileTree.update(folders, files)
   }
 
   /**
@@ -323,35 +318,14 @@ export default class App extends TComponent {
    */
   async addFile (...fileDataList) {
     await this.idbFile.addFiles(fileDataList)
-
-    // ファイルツリー
-    let item = null
-    for (const fileData of fileDataList) {
-      const [folder, name] = this.getFileTreeFolderAndName(fileData.path)
-      item = this.createFileTreeItem(name, !fileData.file)
-      this.fileTreeInsert(folder, item)
-    }
-    if (item) this.fileTree.current = item
-
-    // await this.updateFileTree()
-  }
-
-  createFileTreeItem (name, isFolder) {
-    const item = new Tree.Item()
-    item.text = name
-    if (!isFolder) {
-      item.isExpandable = false
-      item.icon = 'insert_drive_file'
-      item.iconColor = '#CCC'
-    }
-    return item
+    this.fileTree.addFile(fileDataList)
   }
 
   /**
    * ツリーで選択されているファイルまたはフォルダーを削除する
    */
   async deleteCurrentFileOrFolder () {
-    const path = this.getFileTreePath()
+    const path = this.fileTree.getPath()
 
     const removedPaths = await this.idbFile.removeFile(path)
 
@@ -361,13 +335,7 @@ export default class App extends TComponent {
       if (tab) this.closeTab(tab)
     }
 
-    // ファイルツリー
-    {
-      const item = this.getFileTreeItem(path)
-      item.parentNode.removeChild(item)
-    }
-
-    // await this.updateFileTree()
+    this.fileTree.remove(path)
   }
 
   /**
@@ -524,65 +492,13 @@ export default class App extends TComponent {
 
   handleFileTreeDoubleClick (event) {
     if (event.target.classList.contains('expand-icon')) return // ツリーの展開アイコン
-    return this.openTab(this.getFileTreePath())
+    return this.openTab(this.fileTree.getPath())
   }
 
   async handleFileTreeContextMenu (event) {
     event.preventDefault()
     const value = await fileTreeContextMenu(event)
     if (value) await this.command(value)
-  }
-
-  /**
-   * ファイルツリーで現在選択されているファイルのパスを取得
-   */
-  getFileTreePath (current = this.fileTree.current) {
-    const path = []
-    while (current !== this.fileTree) {
-      path.unshift(current.text)
-      current = current.parentNode
-    }
-    return path.join('/')
-  }
-
-  /**
-   * ファイルツリーで現在選択されているファイルの親フォルダーパスを取得
-   * (選択されているのがフォルダーなら自身のパス)
-   */
-  getFileTreeFolderPath (item = this.fileTree.current) {
-    if (!item) return ''
-    if (item.isExpandable === false) item = item.parentNode
-    let path = this.getFileTreePath(item)
-    if (path !== '') path = path + '/'
-    return path
-  }
-
-  /**
-   * パスからファイルツリー項目を取得
-   * @param {string} path - パス
-   * @return {TreeItem} - ツリー項目
-   */
-  getFileTreeItem (path) {
-    if (!path) return this.fileTree
-    return path.split('/').reduce((item, name) =>
-      seq(item).find(
-        cItem => cItem.text === name) ||
-        this.fileTreeInsert(item, this.createFileTreeItem(name, true)
-        )
-    , this.fileTree)
-  }
-
-  /**
-   * パスから親フォルダー項目と名前を取得
-   * @param {string} path - パス
-   * @return {TreeItem} - 親フォルダー
-   * @return {string} - ファイル名
-   */
-  getFileTreeFolderAndName (path) {
-    const folderPath = path.split('/')
-    const name = folderPath.pop()
-    const folder = this.getFileTreeItem(folderPath.join('/')) || this.fileTree
-    return [folder, name]
   }
 
   async command (command) {
@@ -596,8 +512,10 @@ export default class App extends TComponent {
           name = await this.inputFileName(`${typeName}名`, name, `新規${typeName}`)
           if (!name) return
           const type = this.idbFile.getFileType(name)
+          const path = this.fileTree.getFolderPath() + name
+          const fileData = command === 'newFile' ? { path, file: new Blob([''], { type }) } : { path }
           try {
-            await this.addFile({ path: this.getFileTreeFolderPath() + name, file: new Blob([''], { type }) })
+            await this.addFile(fileData)
             return
           } catch (error) {
             if (error.name === 'ConstraintError') {
@@ -616,7 +534,7 @@ export default class App extends TComponent {
         const newName = await this.inputFileName(isFolder ? 'フォルダー名' : 'ファイル名', prevName, '名前の変更')
         if (!newName) return
 
-        let path = this.getFileTreePath(this.fileTree.current.parentNode)
+        let path = this.fileTree.getPath(this.fileTree.current.parentNode)
         if (path !== '') path += '/'
         return this.fileListMove(path + prevName, path + newName)
       }
@@ -627,7 +545,7 @@ export default class App extends TComponent {
         return this.deleteCurrentFileOrFolder()
       }
       case 'open':
-        return this.openTab(this.getFileTreePath())
+        return this.openTab(this.fileTree.getPath())
       default:
         throw new Error('Undefiend command: ' + command)
     }
@@ -679,27 +597,7 @@ export default class App extends TComponent {
       if (tab) tab.path = _new
     }
 
-    // ファイルツリー
-    {
-      const [folder, name] = this.getFileTreeFolderAndName(newPath)
-      const item = this.getFileTreeItem(prevPath)
-      item.text = name
-      this.fileTreeInsert(folder, item)
-      if (folder !== this.fileTree) folder.expand()
-    }
-
-    // await this.updateFileTree()
-  }
-
-  fileTreeInsert (parentFolder, targetItem) {
-    const fileName = targetItem.text
-    const ref = seq(parentFolder).find(item => (
-      targetItem.isExpandable
-        ? (!item.isExpandable || item.text > fileName)
-        : (!item.isExpandable && item.text > fileName)
-    ))
-    parentFolder.insertBefore(targetItem, ref)
-    return targetItem
+    this.fileTree.move(prevPath, newPath)
   }
 
   async handleFileTreeMouseDown (event) {
@@ -759,7 +657,7 @@ export default class App extends TComponent {
 
           // エディターへのドロップ
           if (prevDropRect.elem === this.tabViews) {
-            return this.openTab(this.getFileTreePath())
+            return this.openTab(this.fileTree.getPath())
           }
 
           this.fileTree.focus()
@@ -768,8 +666,8 @@ export default class App extends TComponent {
           if (prevDropRect.item === targetItem) return
 
           // ファイル・フォルダ移動
-          const prevName = this.getFileTreePath(targetItem)
-          const newName = this.getFileTreeFolderPath(prevDropRect.item) + targetItem.text
+          const prevName = this.fileTree.getPath(targetItem)
+          const newName = this.fileTree.getFolderPath(prevDropRect.item) + targetItem.text
           return this.fileListMove(prevName, newName)
         }
       },
