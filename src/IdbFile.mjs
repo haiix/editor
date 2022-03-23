@@ -21,7 +21,7 @@ export default class IdbFile {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       const store = tx.objectStore('files')
       for (let i = 1; i <= 4; i++) {
-        idb.add(store, { path: 'workspace' + i, label: 'ワークスペース' + i })
+        idb.add(store, { path: 'workspace' + i, label: 'ワークスペース' + i, setting: { fileName: '', password: '' } })
       }
     })
   }
@@ -32,7 +32,10 @@ export default class IdbFile {
       idb.cursor({
         index: tx.objectStore('files').index('path'),
         forEach: fileData => {
-          if (!fileData.path.includes('/')) workSpaces.push(fileData)
+          if (!fileData.path.includes('/')) {
+            if (!fileData.setting) fileData.setting = { fileName: '', password: '' }
+            workSpaces.push(fileData)
+          }
         }
       })
     ))
@@ -164,6 +167,27 @@ export default class IdbFile {
       index: tx.objectStore('files').index('path'),
       range: IDBKeyRange.only(this.workspace + path),
       forEach: value => value ? value.file : null
+    }))
+  }
+
+  putWorkSpaceSetting (setting) {
+    return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
+      return idb.cursor({
+        index: tx.objectStore('files').index('path'),
+        range: IDBKeyRange.only(this.workspace.slice(0, -1)),
+        forEach (value, cursor) {
+          value.setting = setting
+          cursor.update(value)
+        }
+      })
+    })
+  }
+
+  getWorkSpaceSetting () {
+    return idb.tx(this.dbSchema, ['files'], 'readonly', tx => idb.cursor({
+      index: tx.objectStore('files').index('path'),
+      range: IDBKeyRange.only(this.workspace.slice(0, -1)),
+      forEach: value => value ? value.setting : { fileName: '', password: '' }
     }))
   }
 

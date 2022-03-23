@@ -9,10 +9,6 @@ import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
 
 const EXT = '.zip'
 
-// TODO ちゃんとインスタンスに保存する
-let opendFileName = ''
-let opendFilePassword = ''
-
 const saveDialog = createDialog(class extends Dialog {
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
@@ -101,10 +97,14 @@ export const passwordPrompt = createDialog(class extends Prompt {
 })
 
 export default class EZip {
+  constructor (setting) {
+    this.setting = setting
+  }
+
   async save (callback) {
-    const name = opendFileName.slice(-4) === '.zip' ? opendFileName.slice(0, -4) : opendFileName
-    const formValues = await saveDialog('', name, opendFilePassword)
-    if (!formValues) return
+    const name = this.setting.fileName.slice(-4) === '.zip' ? this.setting.fileName.slice(0, -4) : this.setting.fileName
+    const formValues = await saveDialog('', name, this.setting.password)
+    if (!formValues) return false
 
     if (formValues.password !== formValues['confirm-password']) {
       throw new Error('パスワードが一致しません')
@@ -119,8 +119,10 @@ export default class EZip {
 
     this.downloadFile(zipFileName, zipBlob)
 
-    opendFileName = zipFileName
-    opendFilePassword = zipFilePassword
+    this.setting.fileName = zipFileName
+    this.setting.password = zipFilePassword
+
+    return true
   }
 
   async createEncryptedZipBlob (password, inputFiles) {
@@ -150,7 +152,7 @@ export default class EZip {
     const zipFile = await openFile(EXT)
     if (!zipFile) return
 
-    opendFileName = zipFile.name
+    this.setting.fileName = zipFile.name
 
     return await this.readEncryptedZipFile(zipFile)
   }
@@ -189,7 +191,7 @@ export default class EZip {
           const password = await passwordPrompt('パスワードを入力してください。')
           if (password == null) return
           options.password = password
-          opendFilePassword = password
+          this.setting.password = password
         }
 
         const path = (entry.filename.slice(-1) === '/' ? entry.filename.slice(0, -1) : entry.filename).slice(prefix.length)

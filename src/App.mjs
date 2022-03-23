@@ -270,6 +270,7 @@ export default class App extends TComponent {
     this.idbFile = new IdbFile(this.namespace)
 
     this.debugWindow = null
+    this.projectSetting = null
 
     window.navigator.serviceWorker.register('./sw.js')
     window.addEventListener('beforeunload', this.handleClose.bind(this))
@@ -300,6 +301,8 @@ export default class App extends TComponent {
   </body>
 </html>`], { type: 'text/html' })
       })
+    } else {
+        this.projectSetting = await this.idbFile.getWorkSpaceSetting()
     }
 
     return this.openTab('index.html')
@@ -786,28 +789,19 @@ export default class App extends TComponent {
     const workspaces = await this.idbFile.getAllWorkSpaces()
 
     const value = await createContextMenu(`
-      ${workspaces.map(data => `<div data-value="ws_${data.path}"><i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i><span>${data.label}</span></div>`).join('')}
+      ${workspaces.map((data, idx) => `<div data-value="${idx}"><i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i><span>${data.label}</span></div>`).join('')}
     `)(event.target)
-
-    // const value = await createContextMenu(`
-    //   <div data-value="ws_workspace1"><i class="material-icons" style="font-size: 16px;">check</i><span>ワークスペース1</span></div>
-    //   <div data-value="ws_workspace2"><i class="material-icons" style="font-size: 16px;">_</i><span>ワークスペース2</span></div>
-    //   <hr class="disabled" />
-    //   <div data-value="add"><i class="material-icons" style="font-size: 16px;">_</i><span>追加/削除...</span></div>
-    // `)(event.target)
+    const workspace = workspaces[value]
 
     event.target.classList.remove('selected')
 
-    if (!value) return
-    if (value.slice(0, 3) === 'ws_') {
-      if (this.idbFile.workspace === value.slice(3) + '/') return
-      this.closeTab(...this.tabs)
-      this.idbFile.workspace = value.slice(3) + '/'
-      await this.updateFileTree()
-      return
-    }
-    console.log(value)
-    throw new Error('Not implemented')
+    if (!workspace) return
+    if (this.idbFile.workspace === workspace.path + '/') return
+
+    this.projectSetting = workspace.setting
+    this.closeTab(...this.tabs)
+    this.idbFile.workspace = workspace.path + '/'
+    await this.updateFileTree()
   }
 
   /**
@@ -861,34 +855,43 @@ export default class App extends TComponent {
   /**
    * 現在開かれているプロジェクトに名前をつけて保存する
    */
-  saveProject () {
-    const ezip = new EZip()
-    return ezip.save(async function () {
+  async saveProject () {
+    const ezip = new EZip(this.projectSetting)
+    const result = await ezip.save(async function () {
       return this.idbFile.getAllFiles()
     }.bind(this))
+    if (result) {
+      this.idbFile.putWorkSpaceSetting(this.projectSetting)
+    }
   }
 
   /**
    * 現在のプロジェクトを閉じる
    */
-  async newProject () {
+  async newProject (updateSetting = true) {
     // タブをすべて閉じる
     this.closeTab(...this.tabs)
     // 現在のファイルリストを削除
     this.idbFile.removeAllFiles()
     // ツリーを空にする
     this.fileTree.textContent = ''
+    if (updateSetting) {
+      this.projectSetting.fileName = ''
+      this.projectSetting.password = ''
+      this.idbFile.putWorkSpaceSetting(this.projectSetting)
+    }
   }
 
   /**
    * プロジェクトのZipファイルをローカルマシンから開く
    */
   async loadProject () {
-    const ezip = new EZip()
+    const ezip = new EZip(this.projectSetting)
     const files = await ezip.load()
     if (!files) return
-    this.newProject()
+    this.newProject(false)
     this.addFile(...files)
+    this.idbFile.putWorkSpaceSetting(this.projectSetting)
   }
 
   onerror (error) {
