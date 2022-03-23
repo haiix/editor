@@ -7,6 +7,7 @@ export default async function initApp (App) {
   let app = null
   try {
     app = new App()
+    if (app.init) await app.init()
     styleCtl.unlock()
     document.body.appendChild(app.element)
     const firstElem = nextTabbable(null, app.element)
@@ -14,13 +15,13 @@ export default async function initApp (App) {
     if (app.main) await app.main()
     window.app = app
     if (app.loop) {
-      ;(async function loop (t) {
+      ;(function loop (t) {
         try {
-          await app.loop(t)
+          app.loop(t)
         } catch (error) {
           styleCtl.unlock()
           if (app.onerror) {
-            await app.onerror(error)
+            app.onerror(error)
           } else {
             throw error
           }

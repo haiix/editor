@@ -187,7 +187,7 @@ export default class IdbFile {
     return idb.tx(this.dbSchema, ['files'], 'readonly', tx => idb.cursor({
       index: tx.objectStore('files').index('path'),
       range: IDBKeyRange.only(this.workspace.slice(0, -1)),
-      forEach: value => value ? value.setting : { fileName: '', password: '' }
+      forEach: value => value.setting ? value.setting : { fileName: '', password: '' }
     }))
   }
 

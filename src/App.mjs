@@ -282,7 +282,7 @@ export default class App extends TComponent {
     }
   }
 
-  async main () {
+  async init () {
     await this.updateFileTree()
     if (this.idbFile.firstTime) {
       // WorkSpace作成
@@ -301,10 +301,8 @@ export default class App extends TComponent {
   </body>
 </html>`], { type: 'text/html' })
       })
-    } else {
-        this.projectSetting = await this.idbFile.getWorkSpaceSetting()
     }
-
+    this.projectSetting = await this.idbFile.getWorkSpaceSetting()
     return this.openTab('index.html')
   }
 
