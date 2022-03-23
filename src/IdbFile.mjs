@@ -162,12 +162,10 @@ export default class IdbFile {
     })
   }
 
-  getFile (path) {
-    return idb.tx(this.dbSchema, ['files'], 'readonly', tx => idb.cursor({
-      index: tx.objectStore('files').index('path'),
-      range: IDBKeyRange.only(this.workspace + path),
-      forEach: value => value ? value.file : null
-    }))
+  async getFile (path) {
+    return (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
+      idb.get(tx.objectStore('files').index('path'), this.workspace + path)
+    ))?.file
   }
 
   putWorkSpaceSetting (setting) {
@@ -183,12 +181,10 @@ export default class IdbFile {
     })
   }
 
-  getWorkSpaceSetting () {
-    return idb.tx(this.dbSchema, ['files'], 'readonly', tx => idb.cursor({
-      index: tx.objectStore('files').index('path'),
-      range: IDBKeyRange.only(this.workspace.slice(0, -1)),
-      forEach: value => value.setting ? value.setting : { fileName: '', password: '' }
-    }))
+  async getWorkSpaceSetting () {
+    return (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
+      idb.get(tx.objectStore('files').index('path'), this.workspace.slice(0, -1))
+    ))?.setting ?? { fileName: '', password: '' }
   }
 
   /**

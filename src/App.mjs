@@ -372,11 +372,15 @@ export default class App extends TComponent {
   }
 
   async createEditor (tab) {
-    const CodeMirror = (await import(/* webpackPrefetch: true */ './CodeMirror.mjs')).default
+    const [cmModule, fileText] = await Promise.all([
+      import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
+      tab.file.text()
+    ])
+    const CodeMirror = cmModule.default
 
     // Editor
     const textarea = document.createElement('textarea')
-    textarea.value = await tab.file.text()
+    textarea.value = fileText
     tab.view.element.appendChild(textarea)
 
     // await new Promise(resolve => requestAnimationFrame(resolve))
