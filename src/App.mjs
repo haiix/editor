@@ -81,10 +81,15 @@ export default class App extends TComponent {
   template () {
     const ukey = 'my-app'
     style(`
-      .${ukey} .menubar {
+      .${ukey} ul {
         margin: 0;
         padding: 0;
         list-style-type: none;
+      }
+      .${ukey} > * {
+        overflow: hidden;
+      }
+      .${ukey} .menubar {
         background: #EEE;
         border-bottom: 1px solid #CCC;
       }
@@ -122,16 +127,21 @@ export default class App extends TComponent {
         position: relative;
         left: -4px;
       }
-      .${ukey} .main-aria {
+      .${ukey} .main-area {
+        background: #EEE;
+      }
+      .${ukey} .main-area > li:not(.current) {
+        display: none;
+      }
+      .${ukey} .main-area-empty {
+        justify-content: center;
+        align-items: center;
+        padding: 0 4em;
+      }
+      .${ukey} .tab-views {
         overflow: hidden;
       }
-      .${ukey} .tabs, .${ukey} .views {
-        margin: 0;
-        padding: 0;
-        list-style-type: none;
-      }
       .${ukey} .tabs {
-        background: #EEE;
         border-bottom: 1px solid #999;
       }
       .${ukey} .tabs > li {
@@ -215,7 +225,7 @@ export default class App extends TComponent {
         font-size: 14px;
       }
     `)
-    this.uses(FileTree, TUl)
+    this.uses(FileTree, TUl, TLi)
     return `
       <div class="${ukey} fullscreen flex column"
         ondragover="return this.handleDragOver(event)"
@@ -247,14 +257,19 @@ export default class App extends TComponent {
           <!-- ファイルリスト可変幅 -->
           <div class="splitter" onmousedown="return this.handleSplitter(event)"></div>
 
-          <!-- タブとエディタ -->
-          <div id="tabViews" class="flex column fit main-aria">
-            <t-ul id="tabs" class="tabs"
-              onchange="return this.handleTabChange(event)"
-              onmousedown="return this.handleTabMouseDown(event)"
-            ></t-ul>
-            <t-ul id="views" class="views flex fit"></t-ul>
-          </div>
+          <t-ul id="mainArea" class="flex column fit main-area">
+            <t-li id="mainAreaEmpty" class="flex column fit main-area-empty current">
+              <p>左のツリーからファイルを選択し、Enterキー、ダブルクリック、またはこのエリアへドラッグ&ドロップしてファイルを開いてください。</p>
+            </t-li>
+            <!-- タブとエディタ -->
+            <t-li id="tabViews" class="flex column fit tab-views">
+              <t-ul id="tabs" class="tabs"
+                onchange="return this.handleTabChange(event)"
+                onmousedown="return this.handleTabMouseDown(event)"
+              ></t-ul>
+              <t-ul id="views" class="views flex fit"></t-ul>
+            </t-li>
+          </t-ul>
         </div>
       </div>
     `
@@ -369,6 +384,7 @@ export default class App extends TComponent {
     this.tabs.element.appendChild(tab.element)
     this.views.element.appendChild(view.element)
     this.tabs.value = path
+    this.mainArea.current = this.tabViews
   }
 
   async createEditor (tab) {
@@ -442,6 +458,9 @@ export default class App extends TComponent {
       this.views.element.removeChild(tab.view.element)
     }
     this.tabs.value = elem ? TComponent.from(elem).value : null
+    if (this.tabs.length === 0) {
+      this.mainArea.current = this.mainAreaEmpty
+    }
   }
 
   /**
@@ -640,7 +659,7 @@ export default class App extends TComponent {
         dropRects.push({ item: this.fileTree, elem: this.fileTree.element, rect: this.fileTree.element.getBoundingClientRect() })
 
         // エディタへのドロップ
-        dropRects.push({ item: null, elem: this.tabViews, rect: this.tabViews.getBoundingClientRect() })
+        dropRects.push({ item: null, elem: this.mainArea.element, rect: this.mainArea.element.getBoundingClientRect() })
 
         this.fileTree.element.blur()
       },
@@ -661,7 +680,7 @@ export default class App extends TComponent {
           prevDropRect.elem.classList.remove('drop-target')
 
           // エディターへのドロップ
-          if (prevDropRect.elem === this.tabViews) {
+          if (prevDropRect.elem === this.mainArea.element) {
             return this.openTab(this.fileTree.getPath())
           }
 

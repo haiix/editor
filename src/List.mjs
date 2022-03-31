@@ -44,6 +44,10 @@ export class TUl extends TComponent {
     return seq(this.element.childNodes).map(node => TComponent.from(node))
   }
 
+  get length () {
+    return this.element.childElementCount
+  }
+
   get (value) {
     return this.items.find(node => node.value === value)
   }
