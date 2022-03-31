@@ -86,6 +86,13 @@ export default class App extends TComponent {
         padding: 0;
         list-style-type: none;
       }
+      .${ukey} a {
+        color: #39F;
+        cursor: pointer;
+      }
+      .${ukey} a:hover {
+        text-decoration: underline;
+      }
       .${ukey} > * {
         overflow: hidden;
       }
@@ -104,6 +111,14 @@ export default class App extends TComponent {
       .${ukey} .menubar > .selected {
         border: 1px solid #9CF;
         background: #BDF;
+      }
+      .${ukey} .side-area > li:not(.current) {
+        display: none;
+      }
+      .${ukey} .side-area-empty {
+        justify-content: center;
+        align-items: center;
+        padding: 0 2em;
       }
       .${ukey} .file-tree {
         height: 0;
@@ -246,13 +261,25 @@ export default class App extends TComponent {
         </ul>
 
         <div class="flex row fit">
-          <!-- ファイルリスト -->
-          <file-tree id="fileTree" class="file-tree" style="width: 160px;"
-            ondblclick="return this.handleFileTreeDoubleClick(event)"
+          <t-ul id="sideArea" class="flex column side-area" style="width: 160px;"
             oncontextmenu="return this.handleFileTreeContextMenu(event)"
-            onmousedown="return this.handleFileTreeMouseDown(event)"
-            onkeydown="return this.handleFileTreeKeyDown(event)"
-          />
+          >
+            <t-li id="sideAreaEmpty" class="flex column fit side-area-empty current">
+              <p>
+                ファイルツリーが空です。<br />
+                このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
+                <!--<br /><a>ここをクリックして「index.html」を追加することもできます。</a>-->
+              </p>
+            </t-li>
+            <t-li id="fileTreeArea" class="flex column fit">
+              <!-- ファイルリスト -->
+              <file-tree id="fileTree" class="file-tree"
+                ondblclick="return this.handleFileTreeDoubleClick(event)"
+                onmousedown="return this.handleFileTreeMouseDown(event)"
+                onkeydown="return this.handleFileTreeKeyDown(event)"
+              />
+            </t-li>
+          </t-ul>
 
           <!-- ファイルリスト可変幅 -->
           <div class="splitter" onmousedown="return this.handleSplitter(event)"></div>
@@ -327,6 +354,11 @@ export default class App extends TComponent {
   async updateFileTree () {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
     this.fileTree.update(folders, files)
+    if (folders.length === 0 && files.length === 0) {
+      this.sideArea.current = this.sideAreaEmpty
+    } else {
+      this.sideArea.current = this.fileTreeArea
+    }
   }
 
   /**
@@ -335,6 +367,7 @@ export default class App extends TComponent {
   async addFile (...fileDataList) {
     await this.idbFile.addFiles(fileDataList)
     this.fileTree.addFile(fileDataList)
+    this.sideArea.current = this.fileTreeArea
   }
 
   /**
