@@ -385,6 +385,9 @@ export default class App extends TComponent {
     }
 
     this.fileTree.remove(path)
+    if (this.fileTree.childElementCount === 0) {
+      this.sideArea.current = this.sideAreaEmpty
+    }
   }
 
   /**

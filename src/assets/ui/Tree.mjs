@@ -105,7 +105,7 @@ class TreeBase extends TComponent {
     if (item.parentNode !== this) throw new Error('The object is not a child of this node.')
     const tree = this.getRootNode()
     if (tree.current && item._item.contains(tree.current._item)) {
-      tree.current = item.nextSibling || item.previousSibling || this
+      tree.current = item.nextSibling || item.previousSibling || (this instanceof TreeItem ? this : null)
     }
     this._list.removeChild(item.element)
   }
