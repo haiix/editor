@@ -20,6 +20,14 @@ function * ancestorNodes (node) {
   }
 }
 
+function getIncludingChild (parent, target) {
+  if (target === parent) return null
+  while (target && target.parentNode !== parent) {
+    target = target.parentNode
+  }
+  return target
+}
+
 const fileTreeContextMenu = createContextMenu(`
   <div data-value="newFile">新規ファイル</div>
   <div data-value="newFolder">新規フォルダー</div>
@@ -92,6 +100,10 @@ export default class App extends TComponent {
       }
       .${ukey} a:hover {
         text-decoration: underline;
+      }
+      .${ukey} .m-icon {
+        font-size: 18px;
+        width: 1em;
       }
       .${ukey} > * {
         overflow: hidden;
@@ -249,7 +261,7 @@ export default class App extends TComponent {
         tabindex="-1"
       >
         <!-- メニュー -->
-        <ul class="menubar flex row"
+        <ul id="menubar" class="menubar flex row"
           onmousedown="return this.handleMenuMouseDown(event)"
           onmouseup="return this.handleMenuMouseUp(event)"
         >
@@ -257,7 +269,12 @@ export default class App extends TComponent {
           <li data-key="newProject">新規</li>
           <li data-key="loadProject">開く</li>
           <li data-key="saveProject">保存</li>
-          <li data-key="run">実行 (F5)</li>
+          <li data-key="run" class="flex row">
+            <i class="material-icons m-icon" style="color: #0A3;">
+              play_circle_outline
+            </i>
+            実行 (F5)
+          </li>
         </ul>
 
         <div class="flex row fit">
@@ -803,7 +820,9 @@ export default class App extends TComponent {
   }
 
   handleMenuMouseDown (event) {
-    const command = event.target.dataset.key
+    const target = getIncludingChild(this.menubar, event.target)
+    if (!target) return
+    const command = target.dataset.key
     switch (command) {
       case 'workspace':
         return this.showWorkSpaceList(event)
@@ -811,7 +830,9 @@ export default class App extends TComponent {
   }
 
   async handleMenuMouseUp (event) {
-    const command = event.target.dataset.key
+    const target = getIncludingChild(this.menubar, event.target)
+    if (!target) return
+    const command = target.dataset.key
     if (command == null) return
     switch (command) {
       case 'workspace':
@@ -867,6 +888,11 @@ export default class App extends TComponent {
   async run () {
     // 実行前に保存
     await Promise.all(seq(this.tabs).map(tab => this.saveTab(tab)))
+
+    if (seq(this.fileTree).every(item => item.text !== 'index.html')) {
+      await alert('"index.html" が無いため実行できません')
+      return
+    }
 
     // await new Promise(resolve => setTimeout(resolve, 100))
 
