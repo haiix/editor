@@ -431,7 +431,8 @@ export default class App extends TComponent {
       image.src = URL.createObjectURL(file) // TODO close時にrevoke
       view.element.appendChild(image)
     } else {
-      this.createEditor(tab)
+      await this.createEditor(tab)
+      tab.editor.focus()
     }
 
     this.tabs.element.appendChild(tab.element)
