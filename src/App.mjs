@@ -264,6 +264,7 @@ export default class App extends TComponent {
         <ul id="menubar" class="menubar flex row"
           onmousedown="return this.handleMenuMouseDown(event)"
           onmouseup="return this.handleMenuMouseUp(event)"
+          oncontextmenu="event.preventDefault()"
         >
           <li data-key="workspace">ワークスペース▾</li>
           <li data-key="newProject">新規</li>
