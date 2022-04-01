@@ -583,6 +583,11 @@ export default class App extends TComponent {
       case 'newFile':
       case 'newFolder':
       {
+        let parentFolder = this.fileTree.current
+        if (parentFolder) {
+          if (!parentFolder.isExpandable) parentFolder = parentFolder.parentNode
+          if (parentFolder !== this.fileTree) parentFolder.expand()
+        }
         const typeName = command === 'newFile' ? 'ファイル' : 'フォルダー'
         let name = ''
         while (true) {
