@@ -901,44 +901,15 @@ export default class App extends TComponent {
       return
     }
 
-    // await new Promise(resolve => setTimeout(resolve, 100))
-
-    // index.htmlがnot foundになることがあるので対策
-    // await window.navigator.serviceWorker.register('./sw.js', { type: 'module' })
-    // for (const i of seq(4)) {
-    //   const res = await fetch('./debug/index.html')
-    //   if (res.status === 200) break
-    // }
-
-    // const handlePopupLoad = event => {
-    //   if (event) event.target.removeEventListener(event.type, handlePopupLoad)
-    //   console.log('onload')
-    //   this.debugWindow.navigator.serviceWorker.register(app.base + 'sw.js', { type: 'module' })
-    // }
-
     if (this.debugWindow && !this.debugWindow.closed) {
-      // await this.debugWindow.fetch(this.base + 'debug/' + this.idbFile.workspace) // not foundになることがあるので対策
-      await this.debugWindow.fetch(this.base + 'blank') // not foundになることがあるので対策
+      await this.debugWindow.fetch(this.base + 'blank.txt') // not foundになることがあるので対策
       this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
-      // this.debugWindow.location.reload()
-      // handlePopupLoad()
     } else {
-      this.debugWindow = window.open(this.base + 'blank', 'appWindow', 'width=400,height=400')
+      this.debugWindow = window.open(this.base + 'blank.txt', 'appWindow', 'width=400,height=400')
+      this.debugWindow.opener = null
       this.debugWindow.onload = async function () {
         this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
       }.bind(this)
-
-      // await fetch(this.base + 'debug/' + this.idbFile.workspace) // not foundになることがあるので対策
-      // this.debugWindow = window.open(this.base + 'debug/' + this.idbFile.workspace, 'appWindow', 'width=400,height=400')
-
-      // await new Promise(resolve => setTimeout(resolve, 500))
-      // await this.debugWindow.fetch(this.base + 'debug/' + this.idbFile.workspace) // not foundになることがあるので対策
-      // this.debugWindow.location.href = this.base + 'debug/' + this.idbFile.workspace
-      // this.debugWindow.addEventListener('load', handlePopupLoad)
-
-      // 親ウィンドウにフォーカスを戻す
-      // https://stackoverflow.com/questions/2181464/i-need-to-open-a-new-window-in-the-background-with-javascript-and-make-sure-the
-      // window.open().close()
     }
   }
 
