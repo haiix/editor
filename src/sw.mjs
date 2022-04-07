@@ -34,8 +34,7 @@ class Main {
           base + 'resources/icons/icon-192.png',
           base + 'resources/icons/icon-512.png',
           base + 'resources/blank.txt',
-          'https://fonts.googleapis.com/icon?family=Material+Icons&display=swap',
-          'https://fonts.gstatic.com/s/materialicons/v125/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2',
+          base + 'resources/vendor/MaterialIcons-Regular.ttf',
           'https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js'
         ]
         const cache = await caches.open(main.namespace)
