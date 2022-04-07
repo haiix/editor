@@ -902,10 +902,10 @@ export default class App extends TComponent {
     }
 
     if (this.debugWindow && !this.debugWindow.closed) {
-      await this.debugWindow.fetch(this.base + 'blank.txt') // not foundになることがあるので対策
+      await this.debugWindow.fetch(this.base + 'resources/blank.txt') // not foundになることがあるので対策
       this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
     } else {
-      this.debugWindow = window.open(this.base + 'blank.txt', 'appWindow', 'width=400,height=400')
+      this.debugWindow = window.open(this.base + 'resources/blank.txt', 'appWindow', 'width=400,height=400')
       this.debugWindow.opener = null
       this.debugWindow.onload = async function () {
         this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
