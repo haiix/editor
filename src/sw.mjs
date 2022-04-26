@@ -71,7 +71,8 @@ class Main {
       }
       return new Response(res, resHeader)
     } else {
-      return await caches.match(req) || await fetch(url)
+      const cache = await caches.open(this.namespace)
+      return (await cache.match(req)) || (await fetch(url))
     }
   }
 }
