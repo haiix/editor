@@ -90,11 +90,6 @@ export default class App extends TComponent {
   template () {
     const ukey = 'my-app'
     style(`
-      .${ukey} ul {
-        margin: 0;
-        padding: 0;
-        list-style-type: none;
-      }
       .${ukey} a {
         color: #39F;
         cursor: pointer;
@@ -171,9 +166,10 @@ export default class App extends TComponent {
       }
       .${ukey} .tabs {
         border-bottom: 1px solid #999;
+        flex-wrap: wrap;
+        align-items: flex-end;
       }
       .${ukey} .tabs > li {
-        display: inline-block;
         padding: 1px 5px 2px;
         border: 1px solid #999;
         border-bottom: none;
@@ -181,14 +177,12 @@ export default class App extends TComponent {
         margin-right: -1px;
         position: relative;
         bottom: -1px;
-        white-space: pre;
-        vertical-align: bottom;
       }
       .${ukey} .tabs > li:hover {
         background: #DEF;
       }
       .${ukey} .tabs > li.current {
-        padding: 1px 5px 4px;
+        padding-bottom: 4px;
         background: #FFF;
       }
       .${ukey} .tabs > li > * {
@@ -309,11 +303,11 @@ export default class App extends TComponent {
             </t-li>
             <!-- タブとエディタ -->
             <t-li id="tabViews" class="flex column fit tab-views">
-              <t-ul id="tabs" class="tabs"
+              <t-ul id="tabs" class="tabs flex row"
                 onchange="return this.handleTabChange(event)"
                 onmousedown="return this.handleTabMouseDown(event)"
               ></t-ul>
-              <t-ul id="views" class="views flex fit"></t-ul>
+              <t-ul id="views" class="views flex fit row"></t-ul>
             </t-li>
           </t-ul>
         </div>

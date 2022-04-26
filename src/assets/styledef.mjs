@@ -33,6 +33,11 @@ export const flex = `
   display: flex;
   flex-direction: column;
 }
+ul.flex.row, ul.flex.column {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
 .flex.row > *, .flex.column > * {
   flex: none;
 }
@@ -40,3 +45,4 @@ export const flex = `
   flex: auto;
 }
 `
+
