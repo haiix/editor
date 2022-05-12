@@ -966,6 +966,7 @@ export default class App extends TComponent {
     this.idbFile.removeAllFiles()
     // ツリーを空にする
     this.fileTree.textContent = ''
+    this.sideArea.current = this.sideAreaEmpty
     if (updateSetting) {
       this.projectSetting.fileName = ''
       this.projectSetting.password = ''
