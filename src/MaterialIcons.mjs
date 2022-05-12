@@ -27,4 +27,3 @@ style(`
     font-feature-settings: 'liga';
   }
 `)
-

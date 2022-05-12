@@ -309,7 +309,7 @@ export default class Tree extends TreeBase {
       item._item.classList.add('current')
       item._container.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     }
-    this._list.dispatchEvent(new window.CustomEvent('change', { detail: item }))
+    this._tree.dispatchEvent(new window.CustomEvent('change', { detail: item }))
   }
 
   get current () {

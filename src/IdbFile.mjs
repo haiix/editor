@@ -21,7 +21,7 @@ export default class IdbFile {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       const store = tx.objectStore('files')
       for (let i = 1; i <= 4; i++) {
-        idb.add(store, { path: 'workspace' + i, label: 'ワークスペース' + i, setting: { fileName: '', password: '' } })
+        idb.add(store, { path: 'workspace' + i, label: 'ワークスペース' + i, setting: this.createDefaultSetting() })
       }
     })
   }
@@ -33,7 +33,7 @@ export default class IdbFile {
         index: tx.objectStore('files').index('path'),
         forEach: fileData => {
           if (!fileData.path.includes('/')) {
-            if (!fileData.setting) fileData.setting = { fileName: '', password: '' }
+            fileData.setting = this.createDefaultSetting(fileData.setting)
             workSpaces.push(fileData)
           }
         }
@@ -182,9 +182,19 @@ export default class IdbFile {
   }
 
   async getWorkSpaceSetting () {
-    return (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
+    const project = (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
       idb.get(tx.objectStore('files').index('path'), this.workspace.slice(0, -1))
-    ))?.setting ?? { fileName: '', password: '' }
+    ))
+    return this.createDefaultSetting(project?.setting)
+  }
+
+  createDefaultSetting (setting) {
+    setting ??= {}
+    setting.fileName ??= ''
+    setting.password ??= ''
+    setting.tabs ??= []
+    setting.currentTab ??= null
+    return setting
   }
 
   /**

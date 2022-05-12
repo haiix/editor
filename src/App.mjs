@@ -338,7 +338,11 @@ export default class App extends TComponent {
   }
 
   async init () {
+    this.projectSetting = await this.idbFile.getWorkSpaceSetting()
     await this.updateFileTree()
+  }
+
+  async main () {
     if (this.idbFile.firstTime) {
       // WorkSpace作成
       await this.idbFile.initWorkSpaces()
@@ -356,9 +360,10 @@ export default class App extends TComponent {
   </body>
 </html>`], { type: 'text/html' })
       })
+      await this.openTab('index.html')
+    } else {
+      await this.restoreTabs()
     }
-    this.projectSetting = await this.idbFile.getWorkSpaceSetting()
-    return this.openTab('index.html')
   }
 
   /**
@@ -394,7 +399,7 @@ export default class App extends TComponent {
     // タブが開いている場合は閉じる
     for (const path of removedPaths) {
       const tab = this.tabs.get(path)
-      if (tab) this.closeTab(tab)
+      if (tab) await this.closeTabs([tab])
     }
 
     this.fileTree.remove(path)
@@ -406,35 +411,53 @@ export default class App extends TComponent {
   /**
    * ファイルをIDBからロードして、タブとエディタを追加する
    */
-  async openTab (path) {
-    if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
+  async openTab (path, toSave = true) {
+    // if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
 
-    // すでにタブが開いている場合はそれを選択する
-    if (seq(this.tabs).find(tab => tab.path === path)) {
+    if (!seq(this.tabs).find(tab => tab.path === path)) {
+      // IDBからロード
+      const file = await this.idbFile.getFile(path)
+
+      const view = new TLi({ value: path })
+      const tab = new EditorTab({ view, path, file })
+
+      if (file.type.slice(0, 6) === 'image/') {
+        // 画像
+        const image = document.createElement('img')
+        image.src = URL.createObjectURL(file) // TODO close時にrevoke
+        view.element.appendChild(image)
+      } else {
+        await this.createEditor(tab)
+        tab.editor.focus()
+      }
+
+      this.tabs.element.appendChild(tab.element)
+      this.views.element.appendChild(view.element)
+    }
+
+    if (toSave) {
       this.tabs.value = path
-      return
+      this.mainArea.current = this.tabViews
+      await this.saveTabs()
     }
+  }
 
-    // IDBからロード
-    const file = await this.idbFile.getFile(path)
+  /**
+   * 現在開いているタブをidbに保存する
+   */
+  async saveTabs () {
+    this.projectSetting.tabs = [...seq(this.tabs).map(tab => tab.path)]
+    this.projectSetting.currentTab = this.tabs.current?.path
+    await this.idbFile.putWorkSpaceSetting(this.projectSetting)
+  }
 
-    const view = new TLi({ value: path })
-    const tab = new EditorTab({ view, path, file })
-
-    if (file.type.slice(0, 6) === 'image/') {
-      // 画像
-      const image = document.createElement('img')
-      image.src = URL.createObjectURL(file) // TODO close時にrevoke
-      view.element.appendChild(image)
-    } else {
-      await this.createEditor(tab)
-      tab.editor.focus()
+  async restoreTabs () {
+    for (const tab of this.projectSetting.tabs) {
+      await this.openTab(tab, false)
     }
-
-    this.tabs.element.appendChild(tab.element)
-    this.views.element.appendChild(view.element)
-    this.tabs.value = path
-    this.mainArea.current = this.tabViews
+    if (this.projectSetting.currentTab) {
+      await this.openTab(this.projectSetting.currentTab)
+    }
   }
 
   async createEditor (tab) {
@@ -497,10 +520,9 @@ export default class App extends TComponent {
   /**
    * タブを閉じる
    */
-  closeTab (...tabs) {
-    if (tabs.length === 0) return // this.tabs.currentがnull
-    let elem = this.tabs.current.element
-    for (const tab of tabs) {
+  async closeTabs (tabs, toSave = true) {
+    let elem = this.tabs.current?.element
+    for (const tab of [...tabs]) { // 要素削除のためiteratorを配列にしておく
       if (tab === this.tabs.current) {
         elem = tab.element.previousElementSibling || tab.element.nextElementSibling
       }
@@ -511,6 +533,7 @@ export default class App extends TComponent {
     if (this.tabs.length === 0) {
       this.mainArea.current = this.mainAreaEmpty
     }
+    if (toSave) await this.saveTabs()
   }
 
   /**
@@ -566,6 +589,7 @@ export default class App extends TComponent {
 
   handleFileTreeDoubleClick (event) {
     if (event.target.classList.contains('expand-icon')) return // ツリーの展開アイコン
+    if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
     return this.openTab(this.fileTree.getPath())
   }
 
@@ -624,6 +648,7 @@ export default class App extends TComponent {
         return this.deleteCurrentFileOrFolder()
       }
       case 'open':
+        if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
         return this.openTab(this.fileTree.getPath())
       default:
         throw new Error('Undefiend command: ' + command)
@@ -674,6 +699,7 @@ export default class App extends TComponent {
     for (const [_prev, _new] of movedPaths) {
       const tab = seq(this.tabs).find(tab => tab.path === _prev)
       if (tab) tab.path = _new
+      await this.saveTabs()
     }
 
     this.fileTree.move(prevPath, newPath)
@@ -736,6 +762,7 @@ export default class App extends TComponent {
 
           // エディターへのドロップ
           if (prevDropRect.elem === this.mainArea.element) {
+            if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
             return this.openTab(this.fileTree.getPath())
           }
 
@@ -756,23 +783,25 @@ export default class App extends TComponent {
     })
   }
 
-  handleTabChange (event) {
+  async handleTabChange (event) {
     const tab = this.tabs.current
-    if (!tab) return
-    this.views.value = tab.path
-    document.title = tab.path + ' - ' + this.name
-    if (!tab.editor) return // CodeMirror以外 (画像)
-    requestAnimationFrame(() => {
-      tab.editor.refresh()
-      tab.editor.focus()
-    })
+    if (tab) {
+      this.views.value = tab.path
+      document.title = tab.path + ' - ' + this.name
+      if (!tab.editor) return // CodeMirror以外 (画像)
+      requestAnimationFrame(() => {
+        tab.editor.refresh()
+        tab.editor.focus()
+      })
+    }
+    await this.saveTabs()
   }
 
-  handleTabMouseDown (event) {
+  async handleTabMouseDown (event) {
     if (event.button !== 0) return
     if (event.target.classList.contains('close-button')) {
       event.preventDefault()
-      this.closeTab(TComponent.from(event.target.parentElement))
+      await this.closeTabs([TComponent.from(event.target.parentElement)])
       return
     }
 
@@ -798,6 +827,9 @@ export default class App extends TComponent {
         prevTargetElem = target.element
         this.tabs.element.insertBefore(this.tabs.current.element, target.idx < idx ? target.element : target.element.nextElementSibling)
         updateRects()
+      },
+      ondragend: () => {
+        this.saveTabs()
       },
       onerror: error => {
         this.onerror(error)
@@ -878,10 +910,13 @@ export default class App extends TComponent {
     if (!workspace) return
     if (this.idbFile.workspace === workspace.path + '/') return
 
+    await this.closeTabs(this.tabs, false)
+
     this.projectSetting = workspace.setting
-    this.closeTab(...this.tabs)
     this.idbFile.workspace = workspace.path + '/'
     await this.updateFileTree()
+
+    await this.restoreTabs()
   }
 
   /**
@@ -917,7 +952,7 @@ export default class App extends TComponent {
       return this.idbFile.getAllFiles()
     }.bind(this))
     if (result) {
-      this.idbFile.putWorkSpaceSetting(this.projectSetting)
+      await this.idbFile.putWorkSpaceSetting(this.projectSetting)
     }
   }
 
@@ -926,7 +961,7 @@ export default class App extends TComponent {
    */
   async newProject (updateSetting = true) {
     // タブをすべて閉じる
-    this.closeTab(...this.tabs)
+    await this.closeTabs(this.tabs, false)
     // 現在のファイルリストを削除
     this.idbFile.removeAllFiles()
     // ツリーを空にする
@@ -934,7 +969,7 @@ export default class App extends TComponent {
     if (updateSetting) {
       this.projectSetting.fileName = ''
       this.projectSetting.password = ''
-      this.idbFile.putWorkSpaceSetting(this.projectSetting)
+      await this.idbFile.putWorkSpaceSetting(this.projectSetting)
     }
   }
 
@@ -945,9 +980,9 @@ export default class App extends TComponent {
     const ezip = new EZip(this.projectSetting)
     const files = await ezip.load()
     if (!files) return
-    this.newProject(false)
-    this.addFile(...files)
-    this.idbFile.putWorkSpaceSetting(this.projectSetting)
+    await this.newProject(false)
+    await this.addFile(...files)
+    await this.idbFile.putWorkSpaceSetting(this.projectSetting)
   }
 
   onerror (error) {
