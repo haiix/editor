@@ -218,10 +218,13 @@ export default class App extends TComponent {
       }
 
       .${ukey} .CodeMirror {
+        font-family: Consolas, Inconsolata, Monospace;
         font-size: 14px;
         height: 100%;
+        line-height: 18px;
       }
       .${ukey} .CodeMirror-code > :not(:last-child) .CodeMirror-line::after {
+        font-family: Monospace;
         position: absolute;
         content: "↓";
         color: #999;
@@ -233,12 +236,14 @@ export default class App extends TComponent {
         color: #999;
       }
       .${ukey} .cm-tab::before {
+        font-family: Monospace;
         position: absolute;
         content: '>';
         color: #999;
         font-size: 9px;
       }
       .cm-ideographic-space::before {
+        font-family: Monospace;
         position: absolute;
         content: '□';
         color: #CCC;
