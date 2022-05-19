@@ -506,12 +506,20 @@ export default class App extends TComponent {
 
     cm.on('keydown', (cm, event) => {
       switch (event.keyCode) {
-        // 改行時、右側スペースをトリムする
-        case 13:
+        case 13: // Enter
         {
-          const cursor = cm.getCursor()
-          const str = cm.getLine(cursor.line).slice(0, cursor.ch)
-          cm.replaceRange(str.trimRight(), { line: cursor.line, ch: 0 }, cursor)
+          if (cm.getSelection() === '') {
+            const cursor = cm.getCursor()
+            const str = cm.getLine(cursor.line)
+            if (str.length - str.trimLeft().length >= cursor.ch) {
+              // カーソル位置がコードより左側なら行挿入
+              event.preventDefault()
+              cm.replaceRange('\n', { line: cursor.line, ch: 0 })
+            } else if (str.trimRight().length <= cursor.ch) {
+              // カーソル位置がコードより右側ならスペースをトリムする
+              cm.replaceRange(str.trimRight(), { line: cursor.line, ch: 0 }, cursor)
+            }
+          }
           break
         }
       }
