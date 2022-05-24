@@ -36,6 +36,7 @@ class Main {
           base + 'resources/blank.txt',
           base + 'resources/vendor/MaterialIcons-Regular.ttf',
           'https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js'
+          'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
         ]
         const cache = await caches.open(main.namespace)
         await cache.addAll(urls)

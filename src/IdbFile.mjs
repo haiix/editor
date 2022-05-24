@@ -149,23 +149,25 @@ export default class IdbFile {
     return movedPaths
   }
 
-  putFile (path, file) {
+  putFile (path, file, srcFile = null) {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       return idb.cursor({
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.only(this.workspace + path),
         forEach (value, cursor) {
           value.file = file
+          value.srcFile = srcFile
           cursor.update(value)
         }
       })
     })
   }
 
-  async getFile (path) {
-    return (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
+  async getFile (path, isSrc = false) {
+    const result = (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
       idb.get(tx.objectStore('files').index('path'), this.workspace + path)
-    ))?.file
+    ))
+    return (isSrc && result?.srcFile) || result?.file
   }
 
   putWorkSpaceSetting (setting) {

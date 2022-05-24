@@ -421,7 +421,7 @@ export default class App extends TComponent {
 
     if (!seq(this.tabs).find(tab => tab.path === path)) {
       // IDBからロード
-      const file = await this.idbFile.getFile(path)
+      const file = await this.idbFile.getFile(path, true)
 
       const view = new TLi({ value: path })
       const tab = new EditorTab({ view, path, file })
@@ -555,11 +555,21 @@ export default class App extends TComponent {
   async saveTab (...tabs) {
     for (const tab of tabs) {
       if (!tab.isModified) continue
-      const prevFile = tab.file
-      // 保存
-      const file = new Blob([tab.editor.getValue()], { type: prevFile.type })
+
       const path = tab.path
-      await this.idbFile.putFile(path, file)
+      let file = new Blob([tab.editor.getValue()], { type: tab.file.type })
+      let srcFile = null
+
+      // TypeScript
+      if (path.slice(path.lastIndexOf('.')) === '.ts') {
+        srcFile = file
+        //const result = ts.transpile(tab.editor.getValue(), { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
+        const result = ts.transpile(tab.editor.getValue(), { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
+        file = new Blob([result], { type: IdbFile.prototype.getFileType('.js') })
+      }
+
+      // 保存
+      await this.idbFile.putFile(path, file, srcFile)
       tab.isModified = false
     }
   }
