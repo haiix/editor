@@ -263,7 +263,7 @@ export default class App extends TComponent {
         <!-- メニュー -->
         <ul id="menubar" class="menubar flex row"
           onmousedown="return this.handleMenuMouseDown(event)"
-          onmouseup="return this.handleMenuMouseUp(event)"
+          onclick="return this.handleMenuClick(event)"
           oncontextmenu="event.preventDefault()"
         >
           <li data-key="workspace">ワークスペース▾</li>
@@ -867,6 +867,7 @@ export default class App extends TComponent {
   }
 
   handleMenuMouseDown (event) {
+    if (event.button !== 0) return
     const target = getIncludingChild(this.menubar, event.target)
     if (!target) return
     const command = target.dataset.key
@@ -876,7 +877,7 @@ export default class App extends TComponent {
     }
   }
 
-  async handleMenuMouseUp (event) {
+  async handleMenuClick (event) {
     const target = getIncludingChild(this.menubar, event.target)
     if (!target) return
     const command = target.dataset.key
