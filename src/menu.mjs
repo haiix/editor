@@ -154,6 +154,7 @@ class ContextMenu extends TComponent {
   }
 
   handleMouseUp (event) {
+    if (event.button !== 0 && event.button !== 2) return
     let target = event.target
     while (target && target.parentNode !== this.element) {
       target = target.parentNode
