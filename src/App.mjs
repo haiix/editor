@@ -242,13 +242,13 @@ export default class App extends TComponent {
         color: #999;
         font-size: 9px;
       }
-      .cm-ideographic-space::before {
+      .${ukey} .cm-ideographic-space::before {
         font-family: Monospace;
         position: absolute;
         content: '□';
         color: #CCC;
       }
-      .CodeMirror-hints {
+      .${ukey} .CodeMirror-hints {
         font-size: 14px;
       }
     `)
@@ -342,11 +342,17 @@ export default class App extends TComponent {
     }
   }
 
+  /**
+   * 画面表示前処理
+   */
   async init () {
     this.projectSetting = await this.idbFile.getWorkSpaceSetting()
-    await this.updateFileTree()
+    await this.refreshFileTree()
   }
 
+  /**
+   * 画面表示後処理
+   */
   async main () {
     if (this.idbFile.firstTime) {
       // WorkSpace作成
@@ -374,7 +380,7 @@ export default class App extends TComponent {
   /**
    * ファイルツリー全体をIDBから読み込んで更新する
    */
-  async updateFileTree () {
+  async refreshFileTree () {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
     this.fileTree.update(folders, files)
     if (folders.length === 0 && files.length === 0) {
@@ -414,11 +420,9 @@ export default class App extends TComponent {
   }
 
   /**
-   * ファイルをIDBからロードして、タブとエディタを追加する
+   * IDBからファイルをロードして、タブとエディタを追加する
    */
   async openTab (path, toSave = true) {
-    // if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
-
     if (!seq(this.tabs).find(tab => tab.path === path)) {
       // IDBからロード
       const file = await this.idbFile.getFile(path)
@@ -448,23 +452,8 @@ export default class App extends TComponent {
   }
 
   /**
-   * 現在開いているタブをidbに保存する
+   * ファイルロードのうち、CodeMirror初期化部分
    */
-  async saveTabs () {
-    this.projectSetting.tabs = [...seq(this.tabs).map(tab => tab.path)]
-    this.projectSetting.currentTab = this.tabs.current?.path
-    await this.idbFile.putWorkSpaceSetting(this.projectSetting)
-  }
-
-  async restoreTabs () {
-    for (const tab of this.projectSetting.tabs) {
-      await this.openTab(tab, false)
-    }
-    if (this.projectSetting.currentTab) {
-      await this.openTab(this.projectSetting.currentTab)
-    }
-  }
-
   async createEditor (tab) {
     const [cmModule, fileText] = await Promise.all([
       import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
@@ -476,8 +465,6 @@ export default class App extends TComponent {
     const textarea = document.createElement('textarea')
     textarea.value = fileText
     tab.view.element.appendChild(textarea)
-
-    // await new Promise(resolve => requestAnimationFrame(resolve))
 
     const cm = CodeMirror.fromTextArea(textarea, {
       lineNumbers: true,
@@ -547,6 +534,27 @@ export default class App extends TComponent {
       this.mainArea.current = this.mainAreaEmpty
     }
     if (toSave) await this.saveTabs()
+  }
+
+  /**
+   * 現在開いているタブをIDBに保存する
+   */
+  async saveTabs () {
+    this.projectSetting.tabs = [...seq(this.tabs).map(tab => tab.path)]
+    this.projectSetting.currentTab = this.tabs.current?.path
+    await this.idbFile.putWorkSpaceSetting(this.projectSetting)
+  }
+
+  /**
+   * IDBからタブを復元する
+   */
+  async restoreTabs () {
+    for (const path of this.projectSetting.tabs) {
+      await this.openTab(path, false)
+    }
+    if (this.projectSetting.currentTab) {
+      await this.openTab(this.projectSetting.currentTab)
+    }
   }
 
   /**
@@ -812,12 +820,12 @@ export default class App extends TComponent {
 
   async handleTabMouseDown (event) {
     if (event.button !== 0) return
+    // 閉じるボタン
     if (event.target.classList.contains('close-button')) {
       event.preventDefault()
       await this.closeTabs([TComponent.from(event.target.parentElement)])
       return
     }
-
     // タブの入れ替え
     let rects, idx, prevTargetElem
     const updateRects = () => {
@@ -915,7 +923,12 @@ export default class App extends TComponent {
     const workspaces = await this.idbFile.getAllWorkSpaces()
 
     const value = await createContextMenu(`
-      ${workspaces.map((data, idx) => `<div data-value="${idx}"><i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i><span>${data.label}</span></div>`).join('')}
+      ${workspaces.map((data, idx) => `
+        <div data-value="${idx}">
+          <i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i>
+          <span>${data.label}</span>
+        </div>
+      `).join('')}
     `)(event.target)
     const workspace = workspaces[value]
 
@@ -928,7 +941,7 @@ export default class App extends TComponent {
 
     this.projectSetting = workspace.setting
     this.idbFile.workspace = workspace.path + '/'
-    await this.updateFileTree()
+    await this.refreshFileTree()
 
     await this.restoreTabs()
   }
