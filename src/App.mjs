@@ -10,7 +10,6 @@ import { createContextMenu } from './menu.mjs'
 import Tree from './assets/ui/Tree.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
-import EZip from './EZip.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
 
@@ -971,9 +970,17 @@ export default class App extends TComponent {
   }
 
   /**
+   * EZip.mjs 動的ロード
+   */
+  async fetchEZip () {
+    return (await import(/* webpackPrefetch: true */ './EZip.mjs')).default
+  }
+
+  /**
    * 現在開かれているプロジェクトに名前をつけて保存する
    */
   async saveProject () {
+    const EZip = await this.fetchEZip()
     const ezip = new EZip(this.projectSetting)
     const result = await ezip.save(async function () {
       return this.idbFile.getAllFiles()
@@ -1005,6 +1012,7 @@ export default class App extends TComponent {
    * プロジェクトのZipファイルをローカルマシンから開く
    */
   async loadProject () {
+    const EZip = await this.fetchEZip()
     const ezip = new EZip(this.projectSetting)
     const files = await ezip.load()
     if (!files) return

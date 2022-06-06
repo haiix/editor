@@ -1,8 +1,4 @@
-/* global zip */
-// import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
-// import { BlobReader, BlobWriter } from '@zip.js/zip.js/lib/core/io.js'
-// import { ZipReader } from '@zip.js/zip.js/lib/core/zip-reader.js'
-// import { ZipWriter } from '@zip.js/zip.js/lib/core/zip-writer.js'
+import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
 import TComponent from '@haiix/tcomponent'
 import style from './assets/style.mjs'
 import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
@@ -131,12 +127,12 @@ export default class EZip {
   }
 
   async createZip (inputFiles, options) {
-    const blobWriter = new zip.BlobWriter('application/zip')
-    const writer = new zip.ZipWriter(blobWriter, options)
+    const blobWriter = new BlobWriter('application/zip')
+    const writer = new ZipWriter(blobWriter, options)
     for (const { file, path } of inputFiles) {
       const foptions = {}
       foptions.directory = !file
-      await writer.add(path, file ? new zip.BlobReader(file) : null, foptions)
+      await writer.add(path, file ? new BlobReader(file) : null, foptions)
     }
     await writer.close()
     return await blobWriter.getData()
@@ -167,7 +163,7 @@ export default class EZip {
   }
 
   async readZip (zipFile, options = {}) {
-    const reader = new zip.ZipReader(new zip.BlobReader(zipFile))
+    const reader = new ZipReader(new BlobReader(zipFile))
     const entries = await reader.getEntries()
 
     // 最上位のフォルダーは取り除く
@@ -196,7 +192,7 @@ export default class EZip {
 
         const path = (entry.filename.slice(-1) === '/' ? entry.filename.slice(0, -1) : entry.filename).slice(prefix.length)
 
-        const file = entry.directory ? null : await entry.getData(new zip.BlobWriter(this.getMimeFromExt(entry.filename)), options)
+        const file = entry.directory ? null : await entry.getData(new BlobWriter(this.getMimeFromExt(entry.filename)), options)
         return { path, file }
       }.bind(this))
     )
