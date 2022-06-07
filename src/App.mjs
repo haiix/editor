@@ -330,23 +330,23 @@ export default class App extends TComponent {
 
     this.debugWindow = null
     this.projectSetting = null
-
-    window.navigator.serviceWorker.register('./sw.js')
-    window.addEventListener('beforeunload', this.handleClose.bind(this))
-  }
-
-  handleClose (event) {
-    if (this.debugWindow && !this.debugWindow.closed) {
-      this.debugWindow.close()
-    }
   }
 
   /**
    * 画面表示前処理
    */
   async init () {
-    this.projectSetting = await this.idbFile.getWorkSpaceSetting()
-    await this.refreshFileTree()
+    window.addEventListener('beforeunload', this.handleClose.bind(this))
+
+    if (window.navigator.serviceWorker == null) {
+      throw new Error('ServiceWorkerが無効です')
+    }
+
+    ;[this.projectSetting] = await Promise.all([
+      this.idbFile.getWorkSpaceSetting(),
+      this.refreshFileTree(),
+      window.navigator.serviceWorker.register('./sw.js')
+    ])
   }
 
   /**
@@ -373,6 +373,12 @@ export default class App extends TComponent {
       await this.openTab('index.html')
     } else {
       await this.restoreTabs()
+    }
+  }
+
+  handleClose (event) {
+    if (this.debugWindow && !this.debugWindow.closed) {
+      this.debugWindow.close()
     }
   }
 

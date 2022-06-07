@@ -178,7 +178,6 @@ export default class EZip {
     // 最上位のフォルダーは取り除く
     let prefix = ''
     for (const entry of entries) {
-
       const i = entry.filename.indexOf('/')
       if (prefix === '') {
         if (i < 0) break
