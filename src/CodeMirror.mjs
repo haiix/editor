@@ -20,8 +20,8 @@ import 'codemirror/addon/lint/javascript-lint.js'
 import 'codemirror/addon/lint/css-lint.js'
 // import 'codemirror/addon/lint/json-lint.js'
 
-window.JSHINT = window.JSHINT || jshint.JSHINT
-window.CSSLint = window.CSSLint || csslint.CSSLint
+window.JSHINT ??= jshint.JSHINT
+window.CSSLint ??= csslint.CSSLint
 // window.jsonlint = jsonlint
 
 export default CodeMirror
