@@ -1,4 +1,5 @@
 import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
+import Encoding from 'encoding-japanese'
 import TComponent from '@haiix/tcomponent'
 import style from './assets/style.mjs'
 import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
@@ -166,9 +167,18 @@ export default class EZip {
     const reader = new ZipReader(new BlobReader(zipFile))
     const entries = await reader.getEntries()
 
+    // SJIS
+    for (const entry of entries) {
+      if (!entry.filenameUTF8) {
+        entry.filename = Encoding.codeToString(Encoding.convert(entry.rawFilename, { to: 'UNICODE' }))
+        entry.filenameUTF8 = true
+      }
+    }
+
     // 最上位のフォルダーは取り除く
     let prefix = ''
     for (const entry of entries) {
+
       const i = entry.filename.indexOf('/')
       if (prefix === '') {
         if (i < 0) break
