@@ -266,9 +266,9 @@ export default class App extends TComponent {
           oncontextmenu="event.preventDefault()"
         >
           <li data-key="workspace">ワークスペース▾</li>
-          <li data-key="newProject">新規</li>
-          <li data-key="loadProject">開く</li>
-          <li data-key="saveProject">保存</li>
+          <li data-key="newProject">新規プロジェクト</li>
+          <li data-key="loadProject">プロジェクトを開く</li>
+          <li data-key="saveProject">プロジェクトを保存</li>
           <li data-key="run" class="flex row">
             <i class="material-icons m-icon" style="color: #0A3;">
               play_circle_outline
@@ -1008,9 +1008,9 @@ export default class App extends TComponent {
     this.fileTree.textContent = ''
     this.sideArea.current = this.sideAreaEmpty
     if (updateSetting) {
-      this.projectSetting.fileName = ''
-      this.projectSetting.password = ''
+      this.projectSetting = this.idbFile.createDefaultSetting()
       await this.idbFile.putWorkSpaceSetting(this.projectSetting)
+      document.title = this.name
     }
   }
 
