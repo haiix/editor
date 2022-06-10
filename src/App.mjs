@@ -819,8 +819,9 @@ export default class App extends TComponent {
         tab.editor.refresh()
         tab.editor.focus()
       })
+    } else {
+      document.title = this.name
     }
-    await this.saveTabs()
   }
 
   async handleTabMouseDown (event) {
@@ -1010,7 +1011,6 @@ export default class App extends TComponent {
     if (updateSetting) {
       this.projectSetting = this.idbFile.createDefaultSetting()
       await this.idbFile.putWorkSpaceSetting(this.projectSetting)
-      document.title = this.name
     }
   }
 
