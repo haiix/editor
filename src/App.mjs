@@ -10,6 +10,7 @@ import { createContextMenu } from './menu.mjs'
 import Tree from './assets/ui/Tree.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
+import Splitter from './Splitter.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
 
@@ -134,21 +135,6 @@ export default class App extends TComponent {
       .${ukey} .file-tree .drop-target {
         background: #BDF;
       }
-      .${ukey} .splitter {
-        z-index: 4;
-        background: #CCC;
-        cursor: w-resize;
-        width: 1px;
-      }
-      .${ukey} .splitter::after {
-        content: "";
-        display: block;
-        /*background: yellow;*/
-        width: 9px;
-        height: 100%;
-        position: relative;
-        left: -4px;
-      }
       .${ukey} .main-area {
         background: #EEE;
       }
@@ -251,7 +237,7 @@ export default class App extends TComponent {
         font-size: 14px;
       }
     `)
-    this.uses(FileTree, TUl, TLi)
+    this.uses(FileTree, Splitter, TUl, TLi)
     return `
       <div class="${ukey} fullscreen flex column"
         ondragover="return this.handleDragOver(event)"
@@ -297,9 +283,7 @@ export default class App extends TComponent {
               />
             </t-li>
           </t-ul>
-
-          <!-- ファイルリスト可変幅 -->
-          <div class="splitter" onmousedown="return this.handleSplitter(event)"></div>
+          <ui-splitter ondrag="return this.handleDragSplitter(event)" onerror="return this.onerror(event)" />
 
           <t-ul id="mainArea" class="flex column fit main-area">
             <t-li id="mainAreaEmpty" class="flex column fit main-area-empty current">
@@ -864,20 +848,8 @@ export default class App extends TComponent {
     })
   }
 
-  handleSplitter (event) {
-    const target = event.target.previousElementSibling
-    // const ox = event.pageX - window.getComputedStyle(target).width.slice(0, -2)
-    const ox = event.pageX - target.style.width.slice(0, -2)
-    hold({
-      cursor: window.getComputedStyle(event.target).cursor,
-      ondrag: px => {
-        target.style.width = Math.max(0, px - ox) + 'px'
-        if (this.tabs.current) this.tabs.current.editor.refresh()
-      },
-      onerror: error => {
-        this.onerror(error)
-      }
-    })
+  handleDragSplitter () {
+    if (this.tabs.current) this.tabs.current.editor.refresh()
   }
 
   handleMenuMouseDown (event) {
