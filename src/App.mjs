@@ -5,7 +5,7 @@ import * as styleDef from './assets/styledef.mjs'
 import {} from './MaterialIcons.mjs'
 import hold from './assets/hold.mjs'
 import { TUl, TLi } from './List.mjs'
-import { alert, confirm, prompt } from './assets/ui/dialog.mjs'
+import { alert, confirm, prompt, Dialog, createDialog } from './assets/ui/dialog.mjs'
 import { createContextMenu } from './menu.mjs'
 import Tree from './assets/ui/Tree.mjs'
 import IdbFile from './IdbFile.mjs'
@@ -90,12 +90,27 @@ export default class App extends TComponent {
   template () {
     const ukey = 'my-app'
     style(`
-      .${ukey} a {
-        color: #39F;
+      .${ukey} a, .t-component-ui-dialog a {
+        color: #06C;
         cursor: pointer;
       }
-      .${ukey} a:hover {
+      .${ukey} a:hover, .t-component-ui-dialog a:hover {
+        color: #39F;
         text-decoration: underline;
+      }
+      ul.choices {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+      .choices a {
+        display: inline-block;
+        box-sizing: border-box;
+        width: 100%;
+        padding: 1em;
+      }
+      .choices a:hover {
+        background: #DEF;
       }
       .${ukey} .m-icon {
         font-size: 18px;
@@ -271,7 +286,8 @@ export default class App extends TComponent {
               <p>
                 ファイルツリーが空です。<br />
                 このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
-                <!--<br /><a>ここをクリックして「index.html」を追加することもできます。</a>-->
+                <br />
+                <a onclick="return this.handleAddTemplateFile(event)">ここをクリックして「index.html」を作成することもできます。</a>
               </p>
             </t-li>
             <t-li id="fileTreeArea" class="flex column fit">
@@ -340,21 +356,7 @@ export default class App extends TComponent {
     if (this.idbFile.firstTime) {
       // WorkSpace作成
       await this.idbFile.initWorkSpaces()
-
-      await this.addFile({
-        path: 'index.html',
-        file: new Blob([`<!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <title>My App</title>
-  </head>
-  <body>
-    <p>Hello, World!</p>
-  </body>
-</html>`], { type: 'text/html' })
-      })
-      await this.openTab('index.html')
+      await this.createTemplateFiles(1)
     } else {
       await this.restoreTabs()
     }
@@ -582,6 +584,94 @@ export default class App extends TComponent {
       case 116: // F5
         event.preventDefault()
         return this.run()
+    }
+  }
+
+  async handleAddTemplateFile (event) {
+    const result = await createDialog(class extends Dialog {
+      titleTemplate () {
+        return 'テンプレート選択'
+      }
+
+      bodyTemplate () {
+        return `
+          <ul class="choices">
+            <li><a onclick="this.resolve(1)">「index.html」のみ作成</a></li>
+            <li><a onclick="this.resolve(2)">「index.html」、「style.css」、「main.js」を作成</a></li>
+          </ul>
+        `
+      }
+
+      buttonsTemplate () {
+        return `
+          <button onclick="return this.handleCancel(event)">キャンセル</button>
+        `
+      }
+    })()
+
+    //if (result == null) return
+
+    await this.createTemplateFiles(result)
+  }
+
+  async createTemplateFiles (id) {
+
+    switch (id) {
+      case 1:
+        await this.addFile(
+          {
+            path: 'index.html',
+            file: new Blob([`<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>My App</title>
+  </head>
+  <body>
+    <p>Hello, World!</p>
+  </body>
+</html>
+`], { type: 'text/html' })
+          }
+        )
+        await this.openTab('index.html')
+        break
+      case 2:
+        await this.addFile(
+          {
+            path: 'index.html',
+            file: new Blob([`<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>My App</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div id="container"></div>
+    <script src="main.js"></script>
+  </body>
+</html>
+`], { type: 'text/html' })
+          },
+          {
+            path: 'style.css',
+            file: new Blob([`#container {
+  font-size: 24px;
+}
+`], { type: 'text/css' })
+          },
+          {
+            path: 'main.js',
+            file: new Blob([`var container = document.getElementById('container');
+container.innerHTML = 'Hello, World!';
+`], { type: 'text/javascript' })
+          }
+        )
+        await this.openTab('index.html', false)
+        await this.openTab('style.css', false)
+        await this.openTab('main.js')
+        break
     }
   }
 

@@ -4,7 +4,7 @@ import hold from './assets/hold.mjs'
 
 export default class Splitter extends TComponent {
   template () {
-    const ukey = 'ui-splitter'
+    const ukey = 't-component-ui-splitter'
     style(`
       .${ukey} {
         z-index: 4;
