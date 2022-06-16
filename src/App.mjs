@@ -90,26 +90,31 @@ export default class App extends TComponent {
   template () {
     const ukey = 'my-app'
     style(`
-      .${ukey} a, .t-component-ui-dialog a {
+      .${ukey} .select-template-button, .select-template-choices button {
+        margin: 0;
+        padding: 0;
+        border: none;
+        text-align: inherit;
+        background: inherit;
         color: #06C;
         cursor: pointer;
       }
-      .${ukey} a:hover, .t-component-ui-dialog a:hover {
+      .${ukey} .select-template-button:hover, .t-component-ui-dialog a:hover {
         color: #39F;
         text-decoration: underline;
       }
-      ul.choices {
+      .select-template-choices {
         margin: 0;
         padding: 0;
         list-style-type: none;
       }
-      .choices a {
+      .select-template-choices button {
         display: inline-block;
         box-sizing: border-box;
         width: 100%;
         padding: 1em;
       }
-      .choices a:hover {
+      .select-template-choices button:hover {
         background: #DEF;
       }
       .${ukey} .m-icon {
@@ -287,7 +292,7 @@ export default class App extends TComponent {
                 ファイルツリーが空です。<br />
                 このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
                 <br />
-                <a onclick="return this.handleAddTemplateFile(event)">ここをクリックして「index.html」を作成することもできます。</a>
+                <button class="select-template-button" onclick="return this.handleSelectTemplate(event)">ここをクリックして「index.html」を作成することもできます。</button>
               </p>
             </t-li>
             <t-li id="fileTreeArea" class="flex column fit">
@@ -587,7 +592,7 @@ export default class App extends TComponent {
     }
   }
 
-  async handleAddTemplateFile (event) {
+  async handleSelectTemplate (event) {
     const result = await createDialog(class extends Dialog {
       titleTemplate () {
         return 'テンプレート選択'
@@ -595,9 +600,9 @@ export default class App extends TComponent {
 
       bodyTemplate () {
         return `
-          <ul class="choices">
-            <li><a onclick="this.resolve(1)">「index.html」のみ作成</a></li>
-            <li><a onclick="this.resolve(2)">「index.html」、「style.css」、「main.js」を作成</a></li>
+          <ul class="select-template-choices">
+            <li><button onclick="this.resolve(1)">「index.html」のみ作成</button></li>
+            <li><button onclick="this.resolve(2)">「index.html」、「style.css」、「main.js」を作成</button></li>
           </ul>
         `
       }
@@ -609,13 +614,10 @@ export default class App extends TComponent {
       }
     })()
 
-    //if (result == null) return
-
     await this.createTemplateFiles(result)
   }
 
   async createTemplateFiles (id) {
-
     switch (id) {
       case 1:
         await this.addFile(
