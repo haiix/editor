@@ -1,6 +1,6 @@
 import TComponent from '@haiix/tcomponent'
 import style from './assets/style.mjs'
-import hold from './assets/hold.mjs'
+import hold, { getPageCoordinate } from './assets/hold.mjs'
 
 export default class Splitter extends TComponent {
   template () {
@@ -24,7 +24,7 @@ export default class Splitter extends TComponent {
     `)
     this.tagName = 'ui-splitter'
     return `
-      <div class="${ukey}" onmousedown="return this.handleSplitter(event)"></div>
+      <div class="${ukey}" ontouchstart="return this.handleSplitter(event)" onmousedown="return this.handleSplitter(event)"></div>
     `
   }
 
@@ -34,8 +34,10 @@ export default class Splitter extends TComponent {
   }
 
   handleSplitter (event) {
+    event.preventDefault()
     const target = this.element.previousElementSibling
-    const ox = event.pageX - target.style.width.slice(0, -2)
+    const [px] = getPageCoordinate(event)
+    const ox = px - target.style.width.slice(0, -2)
     hold({
       cursor: window.getComputedStyle(event.target).cursor,
       ondrag: px => {

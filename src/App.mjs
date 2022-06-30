@@ -901,7 +901,7 @@ container.innerHTML = 'Hello, World!';
   }
 
   async handleTabMouseDown (event) {
-    if (event.button !== 0) return
+    if (event.type === 'mousedown' && event.button !== 0) return
     // 閉じるボタン
     if (event.target.classList.contains('close-button')) {
       event.preventDefault()

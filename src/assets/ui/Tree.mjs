@@ -262,8 +262,9 @@ export default class Tree extends TreeBase {
     this.tagName = 'ui-tree'
     return `
       <div id="_tree" tabindex="0"
-        onmousedown="this._handleTreeMousedown(event)"
-        onkeydown="this._handleTreeKeydown(event)"
+        ontouchstart="return this._handleTreeMousedown(event)"
+        onmousedown="return this._handleTreeMousedown(event)"
+        onkeydown="return this._handleTreeKeydown(event)"
       >
         <ul id="_list"></ul>
       </div>
@@ -276,13 +277,14 @@ export default class Tree extends TreeBase {
     this.current = null
     this.onexpand = null
     this.oncollapse = null
+    this.ontouchstart = null
     this.onmousedown = null
     this.onkeydown = null
 
     for (const [key, value] of Object.entries(attr)) {
       if (typeof value === 'string') {
         this._tree.setAttribute(key, value)
-      } else if (key.slice(0, 2) === 'on' && key !== 'onexpand' && key !== 'oncollapse' && key !== 'onmousedown' && key !== 'onkeydown') {
+      } else if (key.slice(0, 2) === 'on' && key !== 'onexpand' && key !== 'oncollapse' && key !== 'ontouchstart' && key !== 'onmousedown' && key !== 'onkeydown') {
         this._tree[key] = value
       } else {
         this[key] = value
@@ -324,6 +326,10 @@ export default class Tree extends TreeBase {
   }
 
   async _handleTreeMousedown (event) {
+    if (typeof this.ontouchstart === 'function') {
+      const result = this.ontouchstart(event)
+      if (result === false || event.defaultPrevented) return
+    }
     if (typeof this.onmousedown === 'function') {
       const result = this.onmousedown(event)
       if (result === false || event.defaultPrevented) return
@@ -337,7 +343,7 @@ export default class Tree extends TreeBase {
     const item = TComponent.from(elem)
 
     if (event.target === item._expandIcon && item.isExpandable) {
-      if (event.button === 0) {
+      if (event.type === 'touchstart' || event.button === 0) {
         if (item.isExpanded) {
           await item.collapse()
         } else {

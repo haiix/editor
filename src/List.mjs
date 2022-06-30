@@ -29,6 +29,7 @@ export class TUl extends TComponent {
       }
     }
     this._current = this.items.find(item => item.current)
+    this.element.addEventListener('touchstart', this._handleMouseDown.bind(this))
     this.element.addEventListener('mousedown', this._handleMouseDown.bind(this))
   }
 
@@ -87,12 +88,14 @@ export class TUl extends TComponent {
   }
 
   _handleMouseDown (event) {
-    if (event.defaultPrevented || this.disabled || event.button !== 0) return
+    if (event.defaultPrevented || this.disabled || (event.type === 'mousedown' && event.button !== 0)) return
     const item = this.items.find(item => item.element.contains(event.target))
     if (!item) return
     event.stopPropagation()
     if (this.current === item || item.disabled) return
-    this.current = item
+    window.requestAnimationFrame(() => {
+      this.current = item
+    })
   }
 
   [Symbol.iterator] () {
