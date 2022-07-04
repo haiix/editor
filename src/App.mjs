@@ -1,10 +1,10 @@
-import TComponent from '@haiix/tcomponent'
+import TElement from './assets/ui/TElement.mjs'
 import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import * as styleDef from './assets/styledef.mjs'
 import {} from './MaterialIcons.mjs'
 import hold from './assets/hold.mjs'
-import { TUl, TLi } from './List.mjs'
+import TList from './assets/ui/TList.mjs'
 import { alert, confirm, prompt, Dialog, createDialog } from './assets/ui/dialog.mjs'
 import { createContextMenu } from './menu.mjs'
 import Tree from './assets/ui/Tree.mjs'
@@ -36,7 +36,7 @@ const fileTreeContextMenu = createContextMenu(`
   <div data-value="delete">削除</div>
 `)
 
-class EditorTab extends TLi {
+class EditorTab extends TList.Item {
   template () {
     return `
       <li>
@@ -59,15 +59,14 @@ class EditorTab extends TLi {
   }
 
   get isModified () {
-    return this.element.classList.contains('modified')
+    return this.classList.contains('modified')
   }
 
   set isModified (value) {
-    const classList = this.element.classList
     if (value) {
-      classList.add('modified')
+      this.classList.add('modified')
     } else {
-      classList.remove('modified')
+      this.classList.remove('modified')
     }
   }
 
@@ -86,7 +85,7 @@ class EditorTab extends TLi {
   }
 }
 
-export default class App extends TComponent {
+export default class App extends TElement {
   template () {
     const ukey = 'my-app'
     style(`
@@ -257,7 +256,7 @@ export default class App extends TComponent {
         font-size: 14px;
       }
     `)
-    this.uses(FileTree, Splitter, TUl, TLi)
+    this.uses(FileTree, Splitter, TList, TList.Item)
     return `
       <div class="${ukey} fullscreen flex column"
         ondragover="return this.handleDragOver(event)"
@@ -284,41 +283,41 @@ export default class App extends TComponent {
         </ul>
 
         <div class="flex row fit">
-          <t-ul id="sideArea" class="flex column side-area" style="width: 160px;"
+          <t-list id="sideArea" class="flex column side-area" style="width: 160px;"
             oncontextmenu="return this.handleFileTreeContextMenu(event)"
           >
-            <t-li id="sideAreaEmpty" class="flex column fit side-area-empty current">
+            <t-list-item id="sideAreaEmpty" class="flex column fit side-area-empty current">
               <p>
                 ファイルツリーが空です。<br />
                 このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
                 <br />
                 <button class="select-template-button" onclick="return this.handleSelectTemplate(event)">ここをクリックして「index.html」を作成することもできます。</button>
               </p>
-            </t-li>
-            <t-li id="fileTreeArea" class="flex column fit">
+            </t-list-item>
+            <t-list-item id="fileTreeArea" class="flex column fit">
               <!-- ファイルリスト -->
               <file-tree id="fileTree" class="file-tree"
                 ondblclick="return this.handleFileTreeDoubleClick(event)"
                 onmousedown="return this.handleFileTreeMouseDown(event)"
                 onkeydown="return this.handleFileTreeKeyDown(event)"
               />
-            </t-li>
-          </t-ul>
+            </t-list-item>
+          </t-list>
           <ui-splitter ondrag="return this.handleDragSplitter(event)" onerror="return this.onerror(event)" />
 
-          <t-ul id="mainArea" class="flex column fit main-area">
-            <t-li id="mainAreaEmpty" class="flex column fit main-area-empty current">
+          <t-list id="mainArea" class="flex column fit main-area">
+            <t-list-item id="mainAreaEmpty" class="flex column fit main-area-empty current">
               <p>左のツリーからファイルを選択し、Enterキー、ダブルクリック、またはこのエリアへドラッグ&ドロップしてファイルを開いてください。</p>
-            </t-li>
+            </t-list-item>
             <!-- タブとエディタ -->
-            <t-li id="tabViews" class="flex column fit tab-views">
-              <t-ul id="tabs" class="tabs flex row"
+            <t-list-item id="tabViews" class="flex column fit tab-views">
+              <t-list id="tabs" class="tabs flex row"
                 onchange="return this.handleTabChange(event)"
                 onmousedown="return this.handleTabMouseDown(event)"
-              ></t-ul>
-              <t-ul id="views" class="views flex fit row"></t-ul>
-            </t-li>
-          </t-ul>
+              ></t-list>
+              <t-list id="views" class="views flex fit row"></t-list>
+            </t-list-item>
+          </t-list>
         </div>
       </div>
     `
@@ -419,25 +418,25 @@ export default class App extends TComponent {
    * IDBからファイルをロードして、タブとエディタを追加する
    */
   async openTab (path, toSave = true) {
-    if (!seq(this.tabs).find(tab => tab.path === path)) {
+    if (this.tabs.get(path) == null) {
       // IDBからロード
       const file = await this.idbFile.getFile(path)
 
-      const view = new TLi({ value: path })
+      const view = new TList.Item({ value: path })
       const tab = new EditorTab({ view, path, file })
 
       if (file.type.slice(0, 6) === 'image/') {
         // 画像
         const image = document.createElement('img')
         image.src = URL.createObjectURL(file) // TODO close時にrevoke
-        view.element.appendChild(image)
+        view.appendChild(image)
       } else {
         await this.createEditor(tab)
         tab.editor.focus()
       }
 
-      this.tabs.element.appendChild(tab.element)
-      this.views.element.appendChild(view.element)
+      this.tabs.appendChild(tab)
+      this.views.appendChild(view)
     }
 
     if (toSave) {
@@ -460,7 +459,7 @@ export default class App extends TComponent {
     // Editor
     const textarea = document.createElement('textarea')
     textarea.value = fileText
-    tab.view.element.appendChild(textarea)
+    tab.view.appendChild(textarea)
 
     const cm = CodeMirror.fromTextArea(textarea, {
       lineNumbers: true,
@@ -517,16 +516,16 @@ export default class App extends TComponent {
    * タブを閉じる
    */
   async closeTabs (tabs, toSave = true) {
-    let elem = this.tabs.current?.element
+    let elem = this.tabs.current
     for (const tab of [...tabs]) { // 要素削除のためiteratorを配列にしておく
       if (tab === this.tabs.current) {
-        elem = tab.element.previousElementSibling || tab.element.nextElementSibling
+        elem = tab.previousSibling || tab.nextSibling
       }
-      this.tabs.element.removeChild(tab.element)
-      this.views.element.removeChild(tab.view.element)
+      this.tabs.removeChild(tab)
+      this.views.removeChild(tab.view)
     }
-    this.tabs.value = elem ? TComponent.from(elem).value : null
-    if (this.tabs.length === 0) {
+    this.tabs.value = elem?.value
+    if (this.tabs.childElementCount === 0) {
       this.mainArea.current = this.mainAreaEmpty
     }
     if (toSave) await this.saveTabs()
@@ -799,7 +798,7 @@ container.innerHTML = 'Hello, World!';
 
     // タブのパスを更新
     for (const [_prev, _new] of movedPaths) {
-      const tab = seq(this.tabs).find(tab => tab.path === _prev)
+      const tab = this.tabs.get(_prev)
       if (tab) tab.path = _new
       await this.saveTabs()
     }
@@ -813,7 +812,7 @@ container.innerHTML = 'Hello, World!';
     // ドラッグ対象
     const targetItem =
       seq(ancestorNodes(event.target))
-        .map(elem => TComponent.from(elem))
+        .map(elem => TElement.from(elem))
         .find(item => item instanceof Tree.Item)
     if (!targetItem) return
 
@@ -823,7 +822,7 @@ container.innerHTML = 'Hello, World!';
     hold({
       ondragstart: (px, py, modal) => {
         // ドラッグ中の半透明アイコン作成
-        shadowElem = TComponent.createElement(`
+        shadowElem = TElement.createElement(`
           <div style="position: absolute; text-align: center; opacity: .75;" class="flex column"></div>
         `)
         shadowElem.appendChild(targetItem.element.querySelector('.icon').cloneNode(true))
@@ -905,15 +904,15 @@ container.innerHTML = 'Hello, World!';
     // 閉じるボタン
     if (event.target.classList.contains('close-button')) {
       event.preventDefault()
-      await this.closeTabs([TComponent.from(event.target.parentElement)])
+      await this.closeTabs([TElement.from(event.target.parentElement)])
       return
     }
     // タブの入れ替え
-    let rects, idx, prevTargetElem
+    let rects, idx, prevTarget
     const updateRects = () => {
       rects = null
       requestAnimationFrame(() => {
-        rects = [...seq(this.tabs).map((tab, idx) => ({ idx, element: tab.element, rect: tab.element.getBoundingClientRect() }))]
+        rects = [...seq(this.tabs).map((tab, idx) => ({ idx, tab, rect: tab.element.getBoundingClientRect() }))]
         idx = seq(this.tabs).indexOf(this.tabs.current)
       })
     }
@@ -922,13 +921,13 @@ container.innerHTML = 'Hello, World!';
       ondrag: (px, py) => {
         if (!rects) return
         const target = rects.find(r => px >= r.rect.left && px < r.rect.right && py >= r.rect.top && py < r.rect.bottom)
-        if (target == null || target.element === this.tabs.current.element) {
-          prevTargetElem = null
+        if (target == null || target === this.tabs.current) {
+          prevTarget = null
           return
         }
-        if (prevTargetElem === target.element) return
-        prevTargetElem = target.element
-        this.tabs.element.insertBefore(this.tabs.current.element, target.idx < idx ? target.element : target.element.nextElementSibling)
+        if (prevTarget === target) return
+        prevTarget = target
+        this.tabs.insertBefore(this.tabs.current, target.idx < idx ? target.tab : target.tab.nextSibling)
         updateRects()
       },
       ondragend: () => {

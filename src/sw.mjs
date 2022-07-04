@@ -33,12 +33,11 @@ class Main {
           base + 'dist/588.js',
           base + 'dist/834.js',
           base + 'resources/app.webmanifest',
+          base + 'resources/blank.txt',
           base + 'resources/icons/icon-32.png',
           base + 'resources/icons/icon-192.png',
           base + 'resources/icons/icon-512.png',
-          base + 'resources/blank.txt',
-          base + 'resources/vendor/MaterialIcons-Regular.ttf',
-          'https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js'
+          base + 'resources/vendor/MaterialIcons-Regular.ttf'
         ]
         const cache = await caches.open(main.namespace)
         await cache.addAll(urls)
