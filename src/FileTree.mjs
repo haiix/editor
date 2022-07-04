@@ -54,9 +54,9 @@ export default class FileTree extends Tree {
     item.parentNode.removeChild(item)
   }
 
-  move (prevPath, newPath) {
+  move (oldPath, newPath) {
     const [folder, name] = this.getFolderAndName(newPath)
-    const item = this.getItem(prevPath)
+    const item = this.getItem(oldPath)
     item.text = name
     this.insert(folder, item)
     if (folder !== this) folder.expand()

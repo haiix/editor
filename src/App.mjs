@@ -517,9 +517,9 @@ export default class App extends TElement {
    */
   async closeTabs (tabs, toSave = true) {
     let elem = this.tabs.current
-    for (const tab of [...tabs]) { // 要素削除のためiteratorを配列にしておく
+    for (const tab of [...tabs]) { // 要素削除のためiteratorを配列に複製しておく
       if (tab === this.tabs.current) {
-        elem = tab.previousSibling || tab.nextSibling
+        elem = tab.previousSibling ?? tab.nextSibling
       }
       this.tabs.removeChild(tab)
       this.views.removeChild(tab.view)
@@ -558,11 +558,8 @@ export default class App extends TElement {
   async saveTab (...tabs) {
     for (const tab of tabs) {
       if (!tab.isModified) continue
-      const prevFile = tab.file
-      // 保存
-      const file = new Blob([tab.editor.getValue()], { type: prevFile.type })
-      const path = tab.path
-      await this.idbFile.putFile(path, file)
+      const file = new Blob([tab.editor.getValue()], { type: tab.file.type })
+      await this.idbFile.putFile(tab.path, file)
       tab.isModified = false
     }
   }
@@ -732,15 +729,15 @@ container.innerHTML = 'Hello, World!';
       }
       case 'rename':
       {
-        const prevName = this.fileTree.current.text
+        const oldName = this.fileTree.current.text
         const isFolder = this.fileTree.current.isExpandable
 
-        const newName = await this.inputFileName(isFolder ? 'フォルダー名' : 'ファイル名', prevName, '名前の変更')
+        const newName = await this.inputFileName(isFolder ? 'フォルダー名' : 'ファイル名', oldName, '名前の変更')
         if (!newName) return
 
         let path = this.fileTree.getPath(this.fileTree.current.parentNode)
         if (path !== '') path += '/'
-        return this.fileListMove(path + prevName, path + newName)
+        return this.fileListMove(path + oldName, path + newName)
       }
       case 'delete':
       {
@@ -780,10 +777,10 @@ container.innerHTML = 'Hello, World!';
   /**
    * ファイル移動・リネーム
    */
-  async fileListMove (prevPath, newPath) {
-    if (prevPath === newPath) return
+  async fileListMove (oldPath, newPath) {
+    if (oldPath === newPath) return
 
-    if ((newPath + '/').startsWith(prevPath + '/')) {
+    if ((newPath + '/').startsWith(oldPath + '/')) {
       await alert('受け側のフォルダーは、送り側フォルダーのサブフォルダーです。', '中断')
       return
     }
@@ -794,16 +791,16 @@ container.innerHTML = 'Hello, World!';
       return
     }
 
-    const movedPaths = await this.idbFile.moveFile(prevPath, newPath)
+    const movedPaths = await this.idbFile.moveFile(oldPath, newPath)
 
     // タブのパスを更新
-    for (const [_prev, _new] of movedPaths) {
-      const tab = this.tabs.get(_prev)
+    for (const [_old, _new] of movedPaths) {
+      const tab = this.tabs.get(_old)
       if (tab) tab.path = _new
       await this.saveTabs()
     }
 
-    this.fileTree.move(prevPath, newPath)
+    this.fileTree.move(oldPath, newPath)
   }
 
   async handleFileTreeMouseDown (event) {
@@ -818,7 +815,7 @@ container.innerHTML = 'Hello, World!';
 
     let shadowElem = null
     const dropRects = []
-    let prevDropRect = null
+    let dropRect = null
     hold({
       ondragstart: (px, py, modal) => {
         // ドラッグ中の半透明アイコン作成
@@ -830,6 +827,7 @@ container.innerHTML = 'Hello, World!';
         modal.appendChild(shadowElem)
 
         // ドロップエリアを求める
+        // ツリーアイテム
         ;(function recur (list) {
           for (const item of list) {
             const elem = item.element.firstElementChild
@@ -837,32 +835,31 @@ container.innerHTML = 'Hello, World!';
             if (item.isExpandable && item.isExpanded) recur(item)
           }
         })(this.fileTree)
-
+        // ツリー
         dropRects.push({ item: this.fileTree, elem: this.fileTree.element, rect: this.fileTree.element.getBoundingClientRect() })
-
-        // エディタへのドロップ
+        // エディター
         dropRects.push({ item: null, elem: this.mainArea.element, rect: this.mainArea.element.getBoundingClientRect() })
 
         this.fileTree.element.blur()
       },
       ondrag: (px, py) => {
+        // 半透明アイコンマウスをカーソルの中心に移動
         shadowElem.style.top = py - (shadowElem.clientWidth / 2) + 'px'
         shadowElem.style.left = px - (shadowElem.clientHeight / 2) + 'px'
 
-        const dropRect = dropRects.find(({ item, rect }) => px >= rect.left && px < rect.left + rect.width && py >= rect.top && py < rect.top + rect.height)
-
-        if (prevDropRect) prevDropRect.elem.classList.remove('drop-target')
-        prevDropRect = dropRect
-        if (dropRect) {
-          dropRect.elem.classList.add('drop-target')
-        }
+        // ドロップ対象更新
+        const newDropRect = dropRects.find(({ rect }) => px >= rect.left && px < rect.left + rect.width && py >= rect.top && py < rect.top + rect.height)
+        if (newDropRect === dropRect) return
+        if (dropRect) dropRect.elem.classList.remove('drop-target')
+        dropRect = newDropRect
+        if (dropRect) dropRect.elem.classList.add('drop-target')
       },
       ondragend: (px, py) => {
-        if (prevDropRect) {
-          prevDropRect.elem.classList.remove('drop-target')
+        if (dropRect) {
+          dropRect.elem.classList.remove('drop-target')
 
           // エディターへのドロップ
-          if (prevDropRect.elem === this.mainArea.element) {
+          if (dropRect.elem === this.mainArea.element) {
             if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
             return this.openTab(this.fileTree.getPath())
           }
@@ -870,12 +867,12 @@ container.innerHTML = 'Hello, World!';
           this.fileTree.focus()
 
           // ドロップ元とドロップ先が同じ場合は何もしない
-          if (prevDropRect.item === targetItem) return
+          if (dropRect.item === targetItem) return
 
           // ファイル・フォルダ移動
-          const prevName = this.fileTree.getPath(targetItem)
-          const newName = this.fileTree.getFolderPath(prevDropRect.item) + targetItem.text
-          return this.fileListMove(prevName, newName)
+          const oldName = this.fileTree.getPath(targetItem)
+          const newName = this.fileTree.getFolderPath(dropRect.item) + targetItem.text
+          return this.fileListMove(oldName, newName)
         }
       },
       onerror: error => {
@@ -908,7 +905,7 @@ container.innerHTML = 'Hello, World!';
       return
     }
     // タブの入れ替え
-    let rects, idx, prevTarget
+    let rects, idx, currTab
     const updateRects = () => {
       rects = null
       requestAnimationFrame(() => {
@@ -922,11 +919,11 @@ container.innerHTML = 'Hello, World!';
         if (!rects) return
         const target = rects.find(r => px >= r.rect.left && px < r.rect.right && py >= r.rect.top && py < r.rect.bottom)
         if (target == null || target === this.tabs.current) {
-          prevTarget = null
+          currTab = null
           return
         }
-        if (prevTarget === target) return
-        prevTarget = target
+        if (currTab === target.tab) return
+        currTab = target.tab
         this.tabs.insertBefore(this.tabs.current, target.idx < idx ? target.tab : target.tab.nextSibling)
         updateRects()
       },
