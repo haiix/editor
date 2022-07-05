@@ -10,7 +10,7 @@ import { createContextMenu } from './menu.mjs'
 import Tree from './assets/ui/Tree.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
-import Splitter from './Splitter.mjs'
+import TSplitter from './assets/ui/TSplitter.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
 
@@ -256,7 +256,7 @@ export default class App extends TElement {
         font-size: 14px;
       }
     `)
-    this.uses(FileTree, Splitter, TList, TList.Item)
+    this.uses(FileTree, TSplitter, TList, TList.Item)
     return `
       <div class="${ukey} fullscreen flex column"
         ondragover="return this.handleDragOver(event)"
@@ -303,7 +303,7 @@ export default class App extends TElement {
               />
             </t-list-item>
           </t-list>
-          <ui-splitter ondrag="return this.handleDragSplitter(event)" onerror="return this.onerror(event)" />
+          <t-splitter ondrag="return this.handleDragSplitter(event)" onerror="return this.onerror(event)" />
 
           <t-list id="mainArea" class="flex column fit main-area">
             <t-list-item id="mainAreaEmpty" class="flex column fit main-area-empty current">

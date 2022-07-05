@@ -1,8 +1,8 @@
 import TComponent from '@haiix/tcomponent'
-import style from './assets/style.mjs'
-import hold, { getPageCoordinate } from './assets/hold.mjs'
+import style from '../style.mjs'
+import hold, { getPageCoordinate } from '../hold.mjs'
 
-export default class Splitter extends TComponent {
+export default class TSplitter extends TComponent {
   template () {
     const ukey = 't-component-ui-splitter'
     style(`
@@ -22,7 +22,7 @@ export default class Splitter extends TComponent {
         left: -4px;
       }
     `)
-    this.tagName = 'ui-splitter'
+    this.tagName = 't-splitter'
     return `
       <div class="${ukey}" ontouchstart="return this.handleSplitter(event)" onmousedown="return this.handleSplitter(event)"></div>
     `
