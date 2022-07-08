@@ -75,7 +75,7 @@ export default class TElement extends TComponent {
   }
 
   get parentNode () {
-    return toc(this.client.parentNode)
+    return toc(this.element.parentNode)
   }
 
   get childNodes () {
@@ -95,15 +95,15 @@ export default class TElement extends TComponent {
   }
 
   get previousSibling () {
-    return toc(this.client.previousSibling)
+    return toc(this.element.previousSibling)
   }
 
   get nextSibling () {
-    return toc(this.client.nextSibling)
+    return toc(this.element.nextSibling)
   }
 
   get classList () {
-    return this.client.classList
+    return this.element.classList
   }
 
   appendChild (child) {
@@ -119,27 +119,27 @@ export default class TElement extends TComponent {
   }
 
   getAttribute (name) {
-    return this.client.getAttribute(name)
+    return this.element.getAttribute(name)
   }
 
   setAttribute (name, value) {
-    return this.client.setAttribute(name, value)
+    return this.element.setAttribute(name, value)
   }
 
   contains (elem) {
-    return this.client.contains(elem.element ?? elem)
+    return this.element.contains(elem.element ?? elem)
   }
 
   addEventListener (type, func, options) {
-    return this.client.addEventListener(type, func, options)
+    return this.element.addEventListener(type, func, options)
   }
 
   removeEventListener (type, func, options) {
-    return this.client.removeEventListener(type, func, options)
+    return this.element.removeEventListener(type, func, options)
   }
 
   dispatchEvent (event) {
-    return this.client.dispatchEvent(event)
+    return this.element.dispatchEvent(event)
   }
 
   * [Symbol.iterator] () {

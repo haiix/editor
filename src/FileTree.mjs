@@ -1,7 +1,7 @@
 import seq from '@haiix/seq'
-import Tree from './assets/ui/Tree.mjs'
+import TTree from './assets/ui/TTree.mjs'
 
-export default class FileTree extends Tree {
+export default class FileTree extends TTree {
   template () {
     const t = super.template()
     this.tagName = 'file-tree'
@@ -18,7 +18,7 @@ export default class FileTree extends Tree {
   }
 
   createItem (name, isFolder) {
-    const item = new Tree.Item()
+    const item = new TTree.Item()
     item.text = name
     if (!isFolder) {
       item.isExpandable = false

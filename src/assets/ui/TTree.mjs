@@ -4,9 +4,8 @@
  * <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
  */
 
-import TComponent from '@haiix/tcomponent'
+import TElement, { initAttrs } from './TElement.mjs'
 import style from '../style.mjs'
-// import * as customEventPolyfill from 'custom-event-polyfill'
 
 const CLASS_NAME = 't-component-ui-tree'
 
@@ -70,23 +69,11 @@ style(`
   }
 `)
 
-class TreeBase extends TComponent {
+class TTreeBase extends TElement {
   set textContent (value) {
     if (value !== '') throw new Error('Only empty string can be set.')
-    this._list.textContent = ''
+    this.client.textContent = ''
     this.current = null
-  }
-
-  get textContent () {
-    return this.element.textContent
-  }
-
-  get firstChild () {
-    return TComponent.from(this._list.firstChild)
-  }
-
-  get lastChild () {
-    return TComponent.from(this._list.lastChild)
   }
 
   appendChild (item) {
@@ -94,8 +81,9 @@ class TreeBase extends TComponent {
   }
 
   insertBefore (item, ref = null) {
-    if (!(item instanceof TreeItem)) throw new Error('The object is not a tree item.')
-    this._list.insertBefore(item._item, ref ? ref._item : null)
+    item = TElement.from(item) ?? item
+    if (!(item instanceof TTreeItem)) throw new Error('The object is not a tree item.')
+    super.insertBefore(item, ref)
     const indent = this._getIndent()
     if (!Number.isNaN(indent)) item._setIndent(indent + 1)
     return item
@@ -104,38 +92,36 @@ class TreeBase extends TComponent {
   removeChild (item) {
     if (item.parentNode !== this) throw new Error('The object is not a child of this node.')
     const tree = this.getRootNode()
-    if (tree.current && item._item.contains(tree.current._item)) {
-      tree.current = item.nextSibling || item.previousSibling || (this instanceof TreeItem ? this : null)
+    if (tree.current && item.contains(tree.current)) {
+      tree.current = item.nextSibling ?? item.previousSibling ?? (this instanceof TTreeItem ? this : null)
     }
-    this._list.removeChild(item.element)
-  }
-
-  get childElementCount () {
-    return this._list.childElementCount
-  }
-
-  * [Symbol.iterator] () {
-    let elem = this._list.firstChild
-    while (elem) {
-      yield TComponent.from(elem)
-      elem = elem.nextSibling
-    }
+    super.removeChild(item)
   }
 }
 
-class TreeItem extends TreeBase {
+class TTreeItem extends TTreeBase {
   template () {
-    this.tagName = 'ui-tree-item'
+    this.tagName = 't-tree-item'
     return `
-      <li id="_item">
+      <li>
         <div id="_container">
-          <i id="_expandIcon" class="material-icons expand-icon">chevron_right</i>
-          <i id="_icon" class="material-icons icon" style="color: #FC9;">folder</i>
+          <i id="_expandIcon" class="material-icons expand-icon"></i>
+          <i id="_icon" class="material-icons icon"></i>
           <span id="_text"></span>
         </div>
-        <ul id="_list" style="display: none;"></ul>
+        <ul id="client" style="display: none;"></ul>
       </li>
     `
+  }
+
+  constructor (attr = {}, nodes = []) {
+    super(attr, nodes)
+    initAttrs(this, attr, [
+      { name: 'text', type: 'string' },
+      { name: 'icon', type: 'string', default: 'folder' },
+      { name: 'iconColor', type: 'string', default: '#FC9' },
+      { name: 'isExpandable', type: 'boolean', default: true }
+    ])
   }
 
   set text (v) {
@@ -171,15 +157,7 @@ class TreeItem extends TreeBase {
   }
 
   get parentNode () {
-    return TComponent.from(this._item.parentNode.parentNode)
-  }
-
-  get previousSibling () {
-    return TComponent.from(this._item.previousSibling)
-  }
-
-  get nextSibling () {
-    return TComponent.from(this._item.nextSibling)
+    return TElement.from(this.element.parentNode.parentNode)
   }
 
   async expand () {
@@ -187,11 +165,16 @@ class TreeItem extends TreeBase {
     if (root.onexpand) {
       this._expandIcon.textContent = 'autorenew'
       const event = new window.CustomEvent('expand', { detail: this })
-      await root.onexpand(event)
+      try {
+        await root.onexpand(event)
+      } catch (error) {
+        this._expandIcon.textContent = 'chevron_right'
+        throw error
+      }
     }
     this._expandIcon.textContent = 'expand_more'
-    this._list.style.display = ''
-    this._item.classList.add('expanded')
+    this.client.style.display = ''
+    this.element.classList.add('expanded')
   }
 
   async collapse () {
@@ -202,16 +185,16 @@ class TreeItem extends TreeBase {
       await root.oncollapse(event)
     }
     this._expandIcon.textContent = 'chevron_right'
-    this._list.style.display = 'none'
-    this._item.classList.remove('expanded')
+    this.client.style.display = 'none'
+    this.classList.remove('expanded')
     const tree = this.getRootNode()
-    if (tree.current && this._item.contains(tree.current._item)) {
+    if (tree.current && this.contains(tree.current)) {
       tree.current = this
     }
   }
 
   get isExpanded () {
-    return this._list.style.display !== 'none'
+    return this.client.style.display !== 'none'
   }
 
   set isExpandable (b) {
@@ -219,7 +202,7 @@ class TreeItem extends TreeBase {
       this._expandIcon.textContent = 'chevron_right'
     } else {
       this._expandIcon.textContent = '_'
-      this._list.style.display = 'none'
+      this.client.style.display = 'none'
     }
   }
 
@@ -229,16 +212,16 @@ class TreeItem extends TreeBase {
 
   getRootNode () {
     let curr = this
-    while (curr instanceof TreeItem) {
+    while (curr instanceof TTreeItem) {
       curr = curr.parentNode
     }
-    return curr instanceof Tree ? curr : null
+    return curr instanceof TTree ? curr : null
   }
 
   getPath () {
     const path = []
     let curr = this
-    while (curr instanceof TreeItem) {
+    while (curr instanceof TTreeItem) {
       path.unshift(curr)
       curr = curr.parentNode
     }
@@ -257,40 +240,30 @@ class TreeItem extends TreeBase {
   }
 }
 
-export default class Tree extends TreeBase {
+class TTree extends TTreeBase {
   template () {
-    this.tagName = 'ui-tree'
+    this.tagName = 't-tree'
     return `
       <div id="_tree" tabindex="0"
         ontouchstart="return this._handleTreeMousedown(event)"
         onmousedown="return this._handleTreeMousedown(event)"
         onkeydown="return this._handleTreeKeydown(event)"
       >
-        <ul id="_list"></ul>
+        <ul id="client"></ul>
       </div>
     `
   }
 
-  constructor (attr, nodes) {
-    super()
-
+  constructor (attr = {}, nodes = []) {
+    super(attr, nodes)
+    initAttrs(this, attr, [
+      { name: 'onexpand', type: 'function' },
+      { name: 'oncollapse', type: 'function' },
+      { name: 'ontouchstart', type: 'function' },
+      { name: 'onmousedown', type: 'function' },
+      { name: 'onkeydown', type: 'function' }
+    ])
     this.current = null
-    this.onexpand = null
-    this.oncollapse = null
-    this.ontouchstart = null
-    this.onmousedown = null
-    this.onkeydown = null
-
-    for (const [key, value] of Object.entries(attr)) {
-      if (typeof value === 'string') {
-        this._tree.setAttribute(key, value)
-      } else if (key.slice(0, 2) === 'on' && key !== 'onexpand' && key !== 'oncollapse' && key !== 'ontouchstart' && key !== 'onmousedown' && key !== 'onkeydown') {
-        this._tree[key] = value
-      } else {
-        this[key] = value
-      }
-    }
-
     this._tree.classList.add(CLASS_NAME)
   }
 
@@ -303,20 +276,20 @@ export default class Tree extends TreeBase {
   }
 
   set current (item) {
-    if (!(item instanceof TreeItem) && item != null) throw new Error('The object is not a tree item.')
+    if (!(item instanceof TTreeItem) && item != null) throw new Error('The object is not a tree item.')
     if (this._lastCurrent === item) return
-    if (this._lastCurrent != null) this._lastCurrent._item.classList.remove('current')
+    if (this._lastCurrent != null) this._lastCurrent.classList.remove('current')
     this._lastCurrent = item
     if (item) {
-      item._item.classList.add('current')
+      item.classList.add('current')
       item._container.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     }
     this._tree.dispatchEvent(new window.CustomEvent('change', { detail: item }))
   }
 
   get current () {
-    if (this._lastCurrent == null || !this._lastCurrent._item.classList.contains('current')) {
-      this._lastCurrent = TComponent.from(this._tree.querySelector('.current'))
+    if (!this._lastCurrent?.classList.contains('current')) {
+      this._lastCurrent = TElement.from(this._tree.querySelector('.current'))
     }
     return this._lastCurrent
   }
@@ -340,7 +313,7 @@ export default class Tree extends TreeBase {
       if (elem === this._tree) return
       elem = elem.parentNode
     }
-    const item = TComponent.from(elem)
+    const item = TElement.from(elem)
 
     if (event.target === item._expandIcon && item.isExpandable) {
       if (event.type === 'touchstart' || event.button === 0) {
@@ -383,10 +356,10 @@ export default class Tree extends TreeBase {
         break
       case 38: // Up
         event.preventDefault()
-        if (this.current._item.previousSibling) {
-          let item = TComponent.from(this.current._item.previousSibling)
-          while (item.isExpanded && item._list.lastChild) {
-            item = TComponent.from(item._list.lastChild)
+        if (this.current.previousSibling) {
+          let item = this.current.previousSibling
+          while (item.isExpanded && item.lastChild) {
+            item = item.lastChild
           }
           this.current = item
         } else {
@@ -400,26 +373,28 @@ export default class Tree extends TreeBase {
         if (this.current.isExpandable && !this.current.isExpanded) {
           await this.current.expand()
         } else {
-          if (this.current._list.firstChild) {
-            this.current = TComponent.from(this.current._list.firstChild)
+          if (this.current.firstChild) {
+            this.current = this.current.firstChild
           }
         }
         break
       case 40: // Down
         event.preventDefault()
-        if (this.current.isExpanded && this.current._list.firstChild) {
-          this.current = TComponent.from(this.current._list.firstChild)
+        if (this.current.isExpanded && this.current.firstChild) {
+          this.current = this.current.firstChild
         } else {
           let item = this.current
-          while (item !== this && !item._item.nextSibling) {
+          while (item !== this && !item.nextSibling) {
             item = item.parentNode
           }
           if (item !== this) {
-            this.current = TComponent.from(item._item.nextSibling)
+            this.current = item.nextSibling
           }
         }
         break
     }
   }
 }
-Tree.Item = TreeItem
+TTree.Item = TTreeItem
+
+export default TTree

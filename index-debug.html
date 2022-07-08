@@ -29,6 +29,14 @@
       import CodeMirror from './node_modules/codemirror/src/codemirror.js'
       window.CodeMirror = CodeMirror
     </script>
-    <script type="module" src="./src/index.mjs"></script>
+    <script type="module">
+      ;(async function () {
+        try {
+          await import('./src/index.mjs')
+        } catch (error) {
+          document.body.textContent = error.stack
+        }
+      }())
+    </script>
   </body>
 </html>

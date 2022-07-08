@@ -7,7 +7,6 @@ import hold from './assets/hold.mjs'
 import TList from './assets/ui/TList.mjs'
 import { alert, confirm, prompt, Dialog, createDialog } from './assets/ui/dialog.mjs'
 import { createContextMenu } from './menu.mjs'
-import Tree from './assets/ui/Tree.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
 import TSplitter from './assets/ui/TSplitter.mjs'
@@ -810,7 +809,7 @@ container.innerHTML = 'Hello, World!';
     const targetItem =
       seq(ancestorNodes(event.target))
         .map(elem => TElement.from(elem))
-        .find(item => item instanceof Tree.Item)
+        .find(item => item instanceof FileTree.Item)
     if (!targetItem) return
 
     let shadowElem = null
