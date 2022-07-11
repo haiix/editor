@@ -1,15 +1,16 @@
-import TElement from './assets/ui/TElement.mjs'
 import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import * as styleDef from './assets/styledef.mjs'
-import {} from './MaterialIcons.mjs'
 import hold from './assets/hold.mjs'
+import TElement from './assets/ui/TElement.mjs'
 import TList from './assets/ui/TList.mjs'
+import TSplitter from './assets/ui/TSplitter.mjs'
 import { alert, confirm, prompt, Dialog, createDialog } from './assets/ui/dialog.mjs'
+import {} from './MaterialIcons.mjs'
 import { createContextMenu } from './menu.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
-import TSplitter from './assets/ui/TSplitter.mjs'
+import EditorTab from './EditorTab.mjs'
 
 style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
 
@@ -26,62 +27,6 @@ function getIncludingChild (parent, target) {
     target = target.parentNode
   }
   return target
-}
-
-const fileTreeContextMenu = createContextMenu(`
-  <div data-value="newFile">新規ファイル</div>
-  <div data-value="newFolder">新規フォルダー</div>
-  <div data-value="rename">名前の変更</div>
-  <div data-value="delete">削除</div>
-`)
-
-class EditorTab extends TList.Item {
-  template () {
-    return `
-      <li>
-        <span id="label" class="label"></span>
-        <span id="closeButton" class="material-icons close-button">close</span>
-      </li>
-    `
-  }
-
-  constructor (attr = {}, nodes = []) {
-    const sattr = Object.assign({}, attr)
-    delete sattr.view
-    delete sattr.path
-    delete sattr.file
-    super(sattr, nodes)
-    this.view = attr.view
-    this.path = attr.path
-    this.file = attr.file
-    this.editor = null
-  }
-
-  get isModified () {
-    return this.classList.contains('modified')
-  }
-
-  set isModified (value) {
-    if (value) {
-      this.classList.add('modified')
-    } else {
-      this.classList.remove('modified')
-    }
-  }
-
-  get path () {
-    return this.value
-  }
-
-  set path (path) {
-    this.value = path
-    this.label.textContent = this.name
-    this.view.value = path
-  }
-
-  get name () {
-    return this.path.slice(('/' + this.path).lastIndexOf('/'))
-  }
 }
 
 export default class App extends TElement {
@@ -167,42 +112,6 @@ export default class App extends TElement {
       .${ukey} .tab-views {
         overflow: hidden;
       }
-      .${ukey} .tabs {
-        border-bottom: 1px solid #999;
-        flex-wrap: wrap;
-        align-items: flex-end;
-      }
-      .${ukey} .tabs > li {
-        padding: 1px 5px 2px;
-        border: 1px solid #999;
-        border-bottom: none;
-        background: #EEE;
-        margin-right: -1px;
-        position: relative;
-        bottom: -1px;
-      }
-      .${ukey} .tabs > li:hover {
-        background: #DEF;
-      }
-      .${ukey} .tabs > li.current {
-        padding-bottom: 4px;
-        background: #FFF;
-      }
-      .${ukey} .tabs > li > * {
-        vertical-align: middle;
-      }
-      .${ukey} .tabs > li.modified > .label::before {
-        content: '*'
-      }
-      .${ukey} .tabs > li .close-button {
-        border: 1px solid transparent;
-        font-size: 12px;
-        padding: 1px;
-        margin-left: 4px;
-      }
-      .${ukey} .tabs > li .close-button:hover {
-        border: 1px solid #CCC;
-      }
       .${ukey} .views {
         background: #EEE;
       }
@@ -218,41 +127,6 @@ export default class App extends TElement {
       }
       .${ukey} .views > li.current {
         display: inline-block;
-      }
-
-      .${ukey} .CodeMirror {
-        font-family: Consolas, Inconsolata, Monospace;
-        font-size: 14px;
-        height: 100%;
-        line-height: 18px;
-      }
-      .${ukey} .CodeMirror-code > :not(:last-child) .CodeMirror-line::after {
-        font-family: Monospace;
-        position: absolute;
-        content: "↓";
-        color: #999;
-        font-size: 9px;
-      }
-      .${ukey} .CodeMirror-code > :last-child .CodeMirror-line::after {
-        position: absolute;
-        content: "[EOF]";
-        color: #999;
-      }
-      .${ukey} .cm-tab::before {
-        font-family: Monospace;
-        position: absolute;
-        content: '>';
-        color: #999;
-        font-size: 9px;
-      }
-      .${ukey} .cm-ideographic-space::before {
-        font-family: Monospace;
-        position: absolute;
-        content: '□';
-        color: #CCC;
-      }
-      .${ukey} .CodeMirror-hints {
-        font-size: 14px;
       }
     `)
     this.uses(FileTree, TSplitter, TList, TList.Item)
@@ -308,7 +182,7 @@ export default class App extends TElement {
             </t-list-item>
             <!-- タブとエディタ -->
             <t-list-item id="tabViews" class="flex column fit tab-views">
-              <t-list id="tabs" class="tabs flex row"
+              <t-list id="tabs" class="editor-tabs flex row"
                 onchange="return this.handleTabChange(event)"
                 onmousedown="return this.handleTabMouseDown(event)"
               ></t-list>
@@ -451,58 +325,13 @@ export default class App extends TElement {
       import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
       tab.file.text()
     ])
-    const CodeMirror = cmModule.default
 
     // Editor
     const textarea = document.createElement('textarea')
     textarea.value = fileText
     tab.view.appendChild(textarea)
 
-    const cm = CodeMirror.fromTextArea(textarea, {
-      lineNumbers: true,
-      matchBrackets: true,
-      autoCloseBrackets: true,
-      // extraKeys: { 'Ctrl-Space': 'autocomplete' },
-      mode: { name: tab.file.type, globalVars: true },
-      gutters: ['CodeMirror-lint-markers'],
-      lint: {
-        esversion: 12,
-        asi: true // セミコロンを無視 (TODO: lintスタイルを設定できるようにしたほうがいいかもしれない)
-      }
-    })
-
-    // 全角スペースの可視化
-    // https://codepen.io/natuan/pen/jzqMZE
-    // https://codemirror.net/doc/manual.html#addOverlay
-    cm.addOverlay({
-      flattenSpans: false,
-      token (stream, state) {
-        if (stream.match('　')) return 'ideographic-space'
-        while (stream.next() != null && !stream.match('　', false));
-        return null
-      }
-    })
-
-    cm.on('keydown', (cm, event) => {
-      switch (event.keyCode) {
-        case 13: // Enter
-        {
-          if (cm.getSelection() === '') {
-            const cursor = cm.getCursor()
-            const str = cm.getLine(cursor.line)
-            if (str.length - str.trimLeft().length >= cursor.ch) {
-              // カーソル位置がコードより左側なら行挿入
-              event.preventDefault()
-              cm.replaceRange('\n', { line: cursor.line, ch: 0 })
-            } else if (str.trimRight().length <= cursor.ch) {
-              // カーソル位置がコードより右側ならスペースをトリムする
-              cm.replaceRange(str.trimRight(), { line: cursor.line, ch: 0 }, cursor)
-            }
-          }
-          break
-        }
-      }
-    })
+    const cm = cmModule.init(textarea, tab.file.type)
     cm.on('change', (cm, event) => {
       this.tabs.current.isModified = true
     })
@@ -690,7 +519,12 @@ container.innerHTML = 'Hello, World!';
 
   async handleFileTreeContextMenu (event) {
     event.preventDefault()
-    const value = await fileTreeContextMenu(event)
+    const value = await createContextMenu(`
+      <div data-value="newFile">新規ファイル</div>
+      <div data-value="newFolder">新規フォルダー</div>
+      <div data-value="rename">名前の変更</div>
+      <div data-value="delete">削除</div>
+    `)
     if (value) await this.command(value)
   }
 
