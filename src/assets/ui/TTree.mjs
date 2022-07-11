@@ -70,6 +70,10 @@ style(`
 `)
 
 class TTreeBase extends TElement {
+  get textContent () {
+    return super.textContent()
+  }
+
   set textContent (value) {
     if (value !== '') throw new Error('Only empty string can be set.')
     this.client.textContent = ''

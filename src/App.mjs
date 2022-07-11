@@ -270,9 +270,7 @@ export default class App extends TElement {
           oncontextmenu="event.preventDefault()"
         >
           <li data-key="workspace">ワークスペース▾</li>
-          <li data-key="newProject">新規プロジェクト</li>
-          <li data-key="loadProject">プロジェクトを開く</li>
-          <li data-key="saveProject">プロジェクトを保存</li>
+          <li data-key="project">プロジェクト▾</li>
           <li data-key="run" class="flex row">
             <i class="material-icons m-icon" style="color: #0A3;">
               play_circle_outline
@@ -947,6 +945,8 @@ container.innerHTML = 'Hello, World!';
     switch (command) {
       case 'workspace':
         return this.showWorkSpaceList(event)
+      case 'project':
+        return this.showProjectMenu(event)
     }
   }
 
@@ -957,19 +957,8 @@ container.innerHTML = 'Hello, World!';
     if (command == null) return
     switch (command) {
       case 'workspace':
+      case 'project':
         return
-      case 'newProject':
-        if (!await confirm('現在のプロジェクトを閉じますか?\n(保存していないデータは失われます)')) {
-          return
-        }
-        return this.newProject()
-      case 'loadProject':
-        if (!await confirm('現在のプロジェクトを閉じて、別のプロジェクトを開きますか?\n(保存していないデータは失われます)')) {
-          return
-        }
-        return this.loadProject()
-      case 'saveProject':
-        return this.saveProject()
       case 'run':
         return this.run(event)
       default:
@@ -1009,6 +998,38 @@ container.innerHTML = 'Hello, World!';
     await this.refreshFileTree()
 
     await this.restoreTabs()
+  }
+
+  /**
+   * プロジェクトのプルダウンメニュー
+   * @param  event  マウスイベント
+   */
+  async showProjectMenu (event) {
+    if (event.target.classList.contains('selected')) return
+    event.target.classList.add('selected')
+
+    const value = await createContextMenu(`
+      <div data-value="newProject">新規プロジェクト</div>
+      <div data-value="loadProject">プロジェクトを開く</div>
+      <div data-value="saveProject">プロジェクトを保存</div>
+    `)(event.target)
+
+    event.target.classList.remove('selected')
+
+    switch (value) {
+      case 'newProject':
+        if (!await confirm('現在のプロジェクトを閉じますか?\n(保存していないデータは失われます)')) {
+          return
+        }
+        return this.newProject()
+      case 'loadProject':
+        if (!await confirm('現在のプロジェクトを閉じて、別のプロジェクトを開きますか?\n(保存していないデータは失われます)')) {
+          return
+        }
+        return this.loadProject()
+      case 'saveProject':
+        return this.saveProject()
+    }
   }
 
   /**
