@@ -524,7 +524,7 @@ container.innerHTML = 'Hello, World!';
       <div data-value="newFolder">新規フォルダー</div>
       <div data-value="rename">名前の変更</div>
       <div data-value="delete">削除</div>
-    `)
+    `)(event)
     if (value) await this.command(value)
   }
 

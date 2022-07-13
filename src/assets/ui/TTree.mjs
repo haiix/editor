@@ -267,7 +267,7 @@ class TTree extends TTreeBase {
       { name: 'onmousedown', type: 'function' },
       { name: 'onkeydown', type: 'function' }
     ])
-    this.current = null
+    this._lastCurrent = null
     this._tree.classList.add(CLASS_NAME)
   }
 

@@ -31,7 +31,7 @@ export function initAttrs (telem, attr, vals) {
   for (const [name, value] of Object.entries(attr)) {
     if (vals.find(val => val.name === name)) continue
     if (typeof value === 'function') {
-      telem.client[name] = value
+      telem.element[name] = value
     } else {
       telem.setAttribute(name, value)
     }
