@@ -167,6 +167,7 @@ class TTreeItem extends TTreeBase {
   async expand () {
     const root = this.getRootNode()
     if (root.onexpand) {
+      if (this._expandIcon.textContent === 'autorenew') return
       this._expandIcon.textContent = 'autorenew'
       const event = new window.CustomEvent('expand', { detail: this })
       try {
@@ -184,6 +185,7 @@ class TTreeItem extends TTreeBase {
   async collapse () {
     const root = this.getRootNode()
     if (root.oncollapse) {
+      if (this._expandIcon.textContent === 'autorenew') return
       this._expandIcon.textContent = 'autorenew'
       const event = new window.CustomEvent('collapse', { detail: this })
       await root.oncollapse(event)
