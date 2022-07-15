@@ -49,10 +49,9 @@ class Main {
   }
 
   async createResponse (req) {
-    let url = req.url
     const root = this.base + 'debug/'
-    if ((url + '/').startsWith(root)) {
-      url = url.split('?')[0].split('#')[0]
+    if ((req.url + '/').startsWith(root)) {
+      const url = req.url.split('?')[0].split('#')[0]
 
       const fileData = await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
         idb.cursor({
@@ -74,7 +73,7 @@ class Main {
       return new Response(res, resHeader)
     } else {
       const cache = await caches.open(this.namespace)
-      return (await cache.match(req)) || (await fetch(url))
+      return (await cache.match(req)) ?? (await fetch(req))
     }
   }
 }
