@@ -4,7 +4,7 @@
  * <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
  */
 
-import TElement, { initAttrs } from './TElement.mjs'
+import TElement from './TElement.mjs'
 import style from '../style.mjs'
 
 const CLASS_NAME = 't-component-ui-tree'
@@ -106,6 +106,12 @@ class TTreeBase extends TElement {
 class TTreeItem extends TTreeBase {
   template () {
     this.tagName = 't-tree-item'
+    this.attrDef = [
+      { name: 'text', type: 'string' },
+      { name: 'icon', type: 'string', default: 'folder' },
+      { name: 'iconColor', type: 'string', default: '#FC9' },
+      { name: 'isExpandable', type: 'boolean', default: true }
+    ]
     return `
       <li>
         <div id="_container">
@@ -116,16 +122,6 @@ class TTreeItem extends TTreeBase {
         <ul id="client" style="display: none;"></ul>
       </li>
     `
-  }
-
-  constructor (attr = {}, nodes = []) {
-    super(attr, nodes)
-    initAttrs(this, attr, [
-      { name: 'text', type: 'string' },
-      { name: 'icon', type: 'string', default: 'folder' },
-      { name: 'iconColor', type: 'string', default: '#FC9' },
-      { name: 'isExpandable', type: 'boolean', default: true }
-    ])
   }
 
   set text (v) {
@@ -249,6 +245,13 @@ class TTreeItem extends TTreeBase {
 class TTree extends TTreeBase {
   template () {
     this.tagName = 't-tree'
+    this.attrDef = [
+      { name: 'onexpand', type: 'function' },
+      { name: 'oncollapse', type: 'function' },
+      { name: 'ontouchstart', type: 'function' },
+      { name: 'onmousedown', type: 'function' },
+      { name: 'onkeydown', type: 'function' }
+    ]
     return `
       <div id="_tree" tabindex="0"
         ontouchstart="return this._handleTreeMousedown(event)"
@@ -262,13 +265,6 @@ class TTree extends TTreeBase {
 
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
-    initAttrs(this, attr, [
-      { name: 'onexpand', type: 'function' },
-      { name: 'oncollapse', type: 'function' },
-      { name: 'ontouchstart', type: 'function' },
-      { name: 'onmousedown', type: 'function' },
-      { name: 'onkeydown', type: 'function' }
-    ])
     this._lastCurrent = null
     this._tree.classList.add(CLASS_NAME)
   }

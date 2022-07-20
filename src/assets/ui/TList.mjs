@@ -1,4 +1,4 @@
-import TElement, { initAttrs } from './TElement.mjs'
+import TElement from './TElement.mjs'
 
 function createItem (elem) {
   if (elem.element || elem.tagName === 'LI') return elem
@@ -8,16 +8,16 @@ function createItem (elem) {
 class TList extends TElement {
   template () {
     this.tagName = 't-list'
+    this.attrDef = [
+      { name: 'name', type: 'string' },
+      { name: 'disabled', type: 'boolean' },
+      { name: 'onmousedown', type: 'function' }
+    ]
     return '<ul id="client" onmousedown="return this._handleMouseDown(event)"></ul>'
   }
 
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
-    initAttrs(this, attr, [
-      { name: 'name', type: 'string' },
-      { name: 'disabled', type: 'boolean' },
-      { name: 'onmousedown', type: 'function' }
-    ])
     this._current = [...this].find(item => item.current)
   }
 
@@ -85,17 +85,13 @@ class TList extends TElement {
 class TListItem extends TElement {
   template () {
     this.tagName = 't-list-item'
-    return '<li id="client"></li>'
-  }
-
-  constructor (attr = {}, nodes = []) {
-    super(attr, nodes)
-    initAttrs(this, attr, [
+    this.attrDef = [
       { name: 'value', type: 'string' },
       { name: 'disabled', type: 'boolean' },
       { name: 'current', type: 'boolean' },
       { name: 'selected', type: 'boolean' }
-    ])
+    ]
+    return '<li id="client"></li>'
   }
 
   set disabled (v) {

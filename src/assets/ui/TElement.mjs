@@ -12,7 +12,7 @@ export function getAttrFunction (attr, name) {
   return typeof attr[name] === 'function' ? attr[name] : null
 }
 
-export function initAttrs (telem, attr, vals) {
+export function initAttrs (telem, attr, vals = []) {
   for (const val of vals) {
     switch (val.type) {
       case 'string':
@@ -32,6 +32,10 @@ export function initAttrs (telem, attr, vals) {
     if (vals.find(val => val.name === name)) continue
     if (typeof value === 'function') {
       telem.element[name] = value
+    } else if (name === 'class' || name === 'style') {
+      const ta = telem.getAttribute(name)
+      const de = name === 'class' ? ' ' : ';'
+      telem.setAttribute(name, ta == null ? value : ta + de + value)
     } else {
       telem.setAttribute(name, value)
     }
@@ -45,13 +49,15 @@ function toc (elem) {
 export default class TElement extends TComponent {
   template () {
     this.tagName = 't-element'
+    this.attrDef = null
     return `
       <div id='client'></div>
     `
   }
 
   constructor (attr = {}, nodes = []) {
-    super()
+    super(attr, nodes)
+    initAttrs(this, attr, this.attrDef)
     this.client = this.client ?? this.element
     for (const node of nodes) {
       this.appendChild(node)
