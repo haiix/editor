@@ -128,6 +128,11 @@ export default class App extends TElement {
       .${ukey} .views > li.current {
         display: inline-block;
       }
+      .${ukey} .views iframe {
+        border: none;
+        width: 100%;
+        height: calc(100% - 4px);
+      }
     `)
     this.uses(FileTree, TSplitter, TList, TList.Item)
     return `
@@ -298,11 +303,29 @@ export default class App extends TElement {
       const view = new TList.Item({ value: path })
       const tab = new EditorTab({ view, path, file })
 
-      if (file.type.slice(0, 6) === 'image/') {
+      if (file.type.startsWith('image/')) {
         // 画像
-        const image = document.createElement('img')
+        const image = new Image()
         image.src = URL.createObjectURL(file) // TODO close時にrevoke
+        image.alt = path
+        image.onmousedown = event => event.preventDefault()
         view.appendChild(image)
+      } else if (file.type.startsWith('audio/')) {
+        // 音声
+        const audio = new Audio()
+        audio.controls = true
+        audio.src = URL.createObjectURL(file) // TODO close時にrevoke
+        view.appendChild(audio)
+      } else if (file.type.startsWith('video/')) {
+        // 動画
+        const video = document.createElement('video')
+        video.controls = true
+        video.src = URL.createObjectURL(file) // TODO close時にrevoke
+        view.appendChild(video)
+      } else if (file.type === 'application/pdf') {
+        const iframe = document.createElement('iframe')
+        iframe.src = URL.createObjectURL(file) // TODO close時にrevoke
+        view.appendChild(iframe)
       } else {
         await this.createEditor(tab)
         tab.editor.focus()
