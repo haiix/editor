@@ -400,6 +400,8 @@ export default class App extends TElement {
     }
     if (this.projectSetting.currentTab) {
       await this.openTab(this.projectSetting.currentTab)
+    } else {
+      this.mainArea.current = this.mainAreaEmpty
     }
   }
 
@@ -860,9 +862,6 @@ container.innerHTML = 'Hello, World!';
     await this.refreshFileTree()
 
     await this.restoreTabs()
-    if (this.tabs.childElementCount === 0) {
-      this.mainArea.current = this.mainAreaEmpty
-    }
   }
 
   /**
