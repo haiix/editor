@@ -177,7 +177,9 @@ export default class App extends TElement {
           <t-splitter ondrag="return this.handleDragSplitter(event)" onerror="return this.onerror(event)" />
 
           <t-list id="mainArea" class="flex column fit main-area">
-            <t-list-item id="mainAreaEmpty" class="flex column fit main-area-empty current">
+            <t-list-item id="mainAreaLoading" class="flex column fit main-area-empty current" style="background: white;">
+            </t-list-item>
+            <t-list-item id="mainAreaEmpty" class="flex column fit main-area-empty">
               <p>左のツリーからファイルを選択し、Enterキー、ダブルクリック、またはこのエリアへドラッグ&ドロップしてファイルを開いてください。</p>
             </t-list-item>
             <!-- タブとエディタ -->
@@ -825,13 +827,19 @@ container.innerHTML = 'Hello, World!';
     if (!workspace) return
     if (this.idbFile.workspace === workspace.path + '/') return
 
-    await this.closeTabs(this.tabs, false)
+    if (this.tabs.childElementCount > 0) {
+      await this.closeTabs(this.tabs, false)
+      this.mainArea.current = this.mainAreaLoading
+    }
 
     this.projectSetting = workspace.setting
     this.idbFile.workspace = workspace.path + '/'
     await this.refreshFileTree()
 
     await this.restoreTabs()
+    if (this.tabs.childElementCount === 0) {
+      this.mainArea.current = this.mainAreaEmpty
+    }
   }
 
   /**
