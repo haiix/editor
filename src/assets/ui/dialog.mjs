@@ -2,60 +2,62 @@ import TComponent from '@haiix/tcomponent'
 import style from '../style.mjs'
 import { isTabbable, nextTabbable, previousTabbable } from '../focus.mjs'
 
+const ukey = 't-component-ui-dialog'
+
+style(`
+  .${ukey} {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline: none;
+  }
+  .${ukey} > .background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+  }
+  .${ukey} > .dialog {
+    background: #FFF;
+    border: 1px solid #999;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-flow: column nowrap;
+    color: #000;
+    background: #FFF;
+  }
+  .${ukey} > .dialog > .title {
+    flex: none;
+    padding: 4px;
+    color: #000;
+    background: #EEE;
+  }
+  .${ukey} > .dialog > .body {
+    flex: auto;
+    padding: 10px;
+  }
+  .${ukey} > .dialog > .buttons {
+    flex: none;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 5px;
+  }
+  .${ukey} > .dialog > .buttons > button {
+    width: 75px;
+    margin: 5px;
+    white-space: nowrap;
+  }
+`)
+
 export class Dialog extends TComponent {
   template () {
-    const ukey = 't-component-ui-dialog'
-    style(`
-      .${ukey} {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        outline: none;
-      }
-      .${ukey} > .background {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: -1;
-      }
-      .${ukey} > .dialog {
-        background: #FFF;
-        border: 1px solid #999;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
-        display: flex;
-        flex-flow: column nowrap;
-        color: #000;
-        background: #FFF;
-      }
-      .${ukey} > .dialog > .title {
-        flex: none;
-        padding: 4px;
-        color: #000;
-        background: #EEE;
-      }
-      .${ukey} > .dialog > .body {
-        flex: auto;
-        padding: 10px;
-      }
-      .${ukey} > .dialog > .buttons {
-        flex: none;
-        display: flex;
-        justify-content: flex-end;
-        padding: 0 5px;
-      }
-      .${ukey} > .dialog > .buttons > button {
-        width: 75px;
-        margin: 5px;
-        white-space: nowrap;
-      }
-    `)
     return `
       <div class="${ukey}" onkeydown="this.handleKeyDown(event)" tabindex="-1">
         <div class="background"></div>
