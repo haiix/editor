@@ -795,7 +795,7 @@ container.innerHTML = 'Hello, World!';
   }
 
   handleDragSplitter () {
-    if (this.tabs.current) this.tabs.current.editor.refresh()
+    if (this.tabs.current) this.tabs.current.editor?.refresh()
   }
 
   handleMenuMouseDown (event) {
