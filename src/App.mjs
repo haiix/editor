@@ -83,6 +83,9 @@ export default class App extends TElement {
         border: 1px solid #9CF;
         background: #BDF;
       }
+      .${ukey} .side-area {
+        width: 160px;
+      }
       .${ukey} .side-area > li:not(.current) {
         display: none;
       }
@@ -159,7 +162,7 @@ export default class App extends TElement {
         </ul>
 
         <div class="flex row fit">
-          <t-list id="sideArea" class="flex column side-area" style="width: 160px;"
+          <t-list id="sideArea" class="flex column side-area"
             oncontextmenu="return this.handleFileTreeContextMenu(event)"
           >
             <t-list-item id="sideAreaEmpty" class="flex column fit side-area-empty current">

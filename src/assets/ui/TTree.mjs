@@ -253,7 +253,7 @@ class TTree extends TTreeBase {
       { name: 'onkeydown', type: 'function' }
     ]
     return `
-      <div id="_tree" tabindex="0"
+      <div id="_tree" tabindex="0" class="${CLASS_NAME}"
         ontouchstart="return this._handleTreeMousedown(event)"
         onmousedown="return this._handleTreeMousedown(event)"
         onkeydown="return this._handleTreeKeydown(event)"
@@ -266,7 +266,6 @@ class TTree extends TTreeBase {
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
     this._lastCurrent = null
-    this._tree.classList.add(CLASS_NAME)
   }
 
   getRootNode () {
