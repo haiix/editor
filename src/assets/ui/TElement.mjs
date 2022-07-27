@@ -153,4 +153,16 @@ export default class TElement extends TComponent {
       yield toc(node)
     }
   }
+
+  onerror (error) {
+    let curr = this.element?.parentNode
+    while (curr != null) {
+      const te = TElement.from(curr)
+      if (typeof te?.onerror === 'function') {
+        return te.onerror(error)
+      }
+      curr = curr.parentNode
+    }
+    throw error
+  }
 }
