@@ -182,7 +182,7 @@ export default class App extends TElement {
               />
             </t-list-item>
           </t-list>
-          <t-splitter ondrag="return this.handleDragSplitter(event)" onerror="return this.onerror(event)" />
+          <t-splitter ondrag="return this.handleDragSplitter(event)" />
 
           <t-list id="mainArea" class="flex column fit main-area">
             <t-list-item id="mainAreaLoading" class="flex column fit main-area-empty current" style="background: white;">
