@@ -324,6 +324,7 @@ export default class App extends TElement {
         view.appendChild(video)
       } else if (file.type === 'application/pdf') {
         const iframe = document.createElement('iframe')
+        iframe.title = path
         iframe.src = URL.createObjectURL(file) // TODO close時にrevoke
         view.appendChild(iframe)
       } else {
@@ -507,15 +508,19 @@ export default class App extends TElement {
           },
           {
             path: 'style.css',
-            file: new Blob([`#container {
-  font-size: 24px;
+            file: new Blob([`body {
+  background: rgb(0, 0, 64);
+  color: rgb(255, 255, 255);
 }
 `], { type: 'text/css' })
           },
           {
             path: 'main.js',
-            file: new Blob([`var container = document.getElementById('container');
-container.innerHTML = 'Hello, World!';
+            file: new Blob([`function print (message) {
+  window.container.insertAdjacentHTML('beforeend', \`<div>\${message}</div>\`);
+}
+
+print('Hello, World!');
 `], { type: 'text/javascript' })
           }
         )
