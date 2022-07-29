@@ -11,27 +11,12 @@ import { createContextMenu } from './menu.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
 import EditorTab from './EditorTab.mjs'
-
-style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
-
-function * ancestorNodes (node) {
-  while (node) {
-    yield node
-    node = node.parentNode
-  }
-}
-
-function getIncludingChild (parent, target) {
-  if (target === parent) return null
-  while (target && target.parentNode !== parent) {
-    target = target.parentNode
-  }
-  return target
-}
+import { ancestorNodes, getIncludingChild } from './util.mjs'
 
 export default class App extends TElement {
   template () {
     const ukey = 'my-app'
+    style(styleDef.ui, styleDef.fullscreen, styleDef.flex)
     style(`
       .${ukey} .select-template-button, .select-template-choices button {
         margin: 0;
@@ -93,13 +78,6 @@ export default class App extends TElement {
         justify-content: center;
         align-items: center;
         padding: 0 2em;
-      }
-      .${ukey} .file-tree {
-        height: 0;
-        min-height: 100%;
-      }
-      .${ukey} .file-tree .drop-target {
-        background: #BDF;
       }
       .${ukey} .main-area {
         background: #EEE;
@@ -175,7 +153,7 @@ export default class App extends TElement {
             </t-list-item>
             <t-list-item id="fileTreeArea" class="flex column fit">
               <!-- ファイルリスト -->
-              <file-tree id="fileTree" class="file-tree"
+              <file-tree id="fileTree"
                 ondblclick="return this.handleFileTreeDoubleClick(event)"
                 onmousedown="return this.handleFileTreeMouseDown(event)"
                 onkeydown="return this.handleFileTreeKeyDown(event)"
@@ -223,14 +201,10 @@ export default class App extends TElement {
   async init () {
     window.addEventListener('beforeunload', this.handleClose.bind(this))
 
-    if (window.navigator.serviceWorker == null) {
-      throw new Error('ServiceWorkerが無効です')
-    }
-
     ;[this.projectSetting] = await Promise.all([
       this.idbFile.getWorkSpaceSetting(),
       this.refreshFileTree(),
-      window.navigator.serviceWorker.register('./sw.js')
+      this.registerServiceWorker()
     ])
   }
 
@@ -251,6 +225,13 @@ export default class App extends TElement {
     if (this.debugWindow && !this.debugWindow.closed) {
       this.debugWindow.close()
     }
+  }
+
+  registerServiceWorker () {
+    if (window.navigator.serviceWorker == null) {
+      throw new Error('ServiceWorkerが無効です')
+    }
+    return window.navigator.serviceWorker.register('./sw.js')
   }
 
   /**

@@ -1,11 +1,29 @@
 import seq from '@haiix/seq'
+import style from './assets/style.mjs'
 import TTree from './assets/ui/TTree.mjs'
+
+const ukey = 'my-file-tree'
+
+style(`
+  .${ukey} {
+    height: 0;
+    min-height: 100%;
+  }
+  .${ukey} .drop-target {
+    background: #BDF;
+  }
+`)
 
 export default class FileTree extends TTree {
   template () {
     const t = super.template()
     this.tagName = 'file-tree'
     return t
+  }
+
+  constructor (...args) {
+    super(...args)
+    this.classList.add(ukey)
   }
 
   update (folders, files) {
