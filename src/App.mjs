@@ -500,7 +500,7 @@ export default class App extends TElement {
           },
           {
             path: 'main.js',
-            file: new Blob([`function print (message) {
+            file: new Blob([`function print(message) {
   window.container.insertAdjacentHTML('beforeend', \`<div>\${message}</div>\`);
 }
 
