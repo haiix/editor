@@ -112,6 +112,10 @@ export default class TElement extends TComponent {
     return this.element.classList
   }
 
+  get style () {
+    return this.element.style
+  }
+
   appendChild (child) {
     return this.client.appendChild(child?.element ?? child)
   }
@@ -145,7 +149,18 @@ export default class TElement extends TComponent {
   }
 
   dispatchEvent (event) {
-    return this.element.dispatchEvent(event)
+    const retVal = this.element.dispatchEvent(event)
+    const fn = 'on' + event.type
+    if (typeof this[fn] === 'function') this[fn](event)
+    return retVal
+  }
+
+  querySelector (...args) {
+    return this.client.querySelector(...args)
+  }
+
+  querySelectorAll (...args) {
+    return this.client.querySelectorAll(...args)
   }
 
   * [Symbol.iterator] () {
