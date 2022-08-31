@@ -47,13 +47,13 @@ function toc (elem) {
 }
 
 export default class TElement extends TComponent {
-  template () {
-    this.tagName = 't-element'
-    this.attrDef = null
-    return `
-      <div id='client'></div>
-    `
-  }
+  // template () {
+  //   this.tagName = 't-element'
+  //   this.attrDef = []
+  //   return `
+  //     <div id='client'></div>
+  //   `
+  // }
 
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
