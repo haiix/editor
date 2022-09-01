@@ -15,7 +15,7 @@ style(`
   }
   .${ukey} > * {
     display: block;
-    line-height: 20px;
+    line-height: 22px;
     padding: 0 10px;
     border: 1px solid transparent;
     white-space: nowrap;
@@ -26,11 +26,15 @@ style(`
   .${ukey} > * > .material-icons {
     font-size: 16px;
     position: relative;
+    top: -2px;
     left: -6px;
   }
   .${ukey} > hr {
     border-top: 1px solid #CCC;
     margin: 4px;
+  }
+  .${ukey} > .disabled {
+    color: #999;
   }
   .${ukey} > .current:not(.disabled) {
     border: 1px solid #BDF;
@@ -44,7 +48,9 @@ class ContextMenu extends TComponent {
       <div class="${ukey}" id="contextMenu"
         onmousedown="return this.handleMouseDown(event)"
         onmouseup="return this.handleMouseUp(event)"
-        onmouseleave="return this.handleMouseLeave(event)">
+        onmouseleave="return this.handleMouseLeave(event)"
+        oncontextmenu="event.preventDefault()"
+      >
         ${this.menuTemplate()}
       </div>
     `

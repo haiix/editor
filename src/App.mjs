@@ -596,11 +596,12 @@ export function sleep(delay) {
 
   async handleFileTreeContextMenu (event) {
     event.preventDefault()
+    const disabled = this.fileTree.current == null ? 'class="disabled"' : ''
     const value = await createContextMenu(`
-      <div data-value="newFile">新規ファイル</div>
-      <div data-value="newFolder">新規フォルダー</div>
-      <div data-value="rename">名前の変更</div>
-      <div data-value="delete">削除</div>
+      <div data-value="newFile"><i class="material-icons" style="color: #AAC;">note_add</i>新規ファイル</div>
+      <div data-value="newFolder"><i class="material-icons" style="color: #FB8;">create_new_folder</i>新規フォルダー</div>
+      <div data-value="rename" ${disabled}><i class="material-icons" style="color: #96C;">drive_file_rename_outline</i>名前の変更</div>
+      <div data-value="delete" ${disabled}><i class="material-icons" style="color: #999;">delete</i>削除</div>
     `)(event)
     if (value) await this.command(value)
   }
@@ -890,8 +891,8 @@ export function sleep(delay) {
     const value = await createContextMenu(`
       ${workspaces.map((data, idx) => `
         <div data-value="${idx}">
-          <i class="material-icons" style="font-size: 16px;">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i>
-          <span>${data.label}</span>
+          <i class="material-icons">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i>
+          ${data.label}
         </div>
       `).join('')}
     `)(event.target)
@@ -923,9 +924,9 @@ export function sleep(delay) {
     event.target.classList.add('selected')
 
     const value = await createContextMenu(`
-      <div data-value="newProject">新規プロジェクト</div>
-      <div data-value="loadProject">プロジェクトを開く</div>
-      <div data-value="saveProject">プロジェクトを保存</div>
+      <div data-value="newProject"><i class="material-icons" style="color: #6A6;">library_add</i>新規プロジェクト</div>
+      <div data-value="loadProject"><i class="material-icons" style="color: #C66;">file_open</i>プロジェクトを開く</div>
+      <div data-value="saveProject"><i class="material-icons" style="color: #66C;">save</i>プロジェクトを保存</div>
     `)(event.target)
 
     event.target.classList.remove('selected')
