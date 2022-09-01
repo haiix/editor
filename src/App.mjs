@@ -429,14 +429,15 @@ export default class App extends TElement {
   async handleSelectTemplate (event) {
     const result = await createDialog(class extends Dialog {
       titleTemplate () {
-        return 'テンプレート選択'
+        return 'テンプレートを選択してください'
       }
 
       bodyTemplate () {
         return `
           <ul class="select-template-choices">
-            <li><button onclick="this.resolve(1)">「index.html」のみ作成</button></li>
-            <li><button onclick="this.resolve(2)">「index.html」、「style.css」、「main.js」を作成</button></li>
+            <li><button onclick="this.resolve(1)">1. 「index.html」のみ作成</button></li>
+            <li><button onclick="this.resolve(2)">2. 「index.html」、「style.css」、「main.js」を作成</button></li>
+            <li><button onclick="this.resolve(3)">3. モジュールを使う</button></li>
           </ul>
         `
       }
@@ -504,6 +505,7 @@ export default class App extends TElement {
   window.container.insertAdjacentHTML('beforeend', \`<div>\${message}</div>\`);
 }
 
+// ここにコードを書く
 print('Hello, World!');
 `], { type: 'text/javascript' })
           }
@@ -511,6 +513,65 @@ print('Hello, World!');
         await this.openTab('index.html', false)
         await this.openTab('style.css', false)
         await this.openTab('main.js')
+        break
+      case 3:
+        await this.addFile(
+          {
+            path: 'index.html',
+            file: new Blob([`<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>My App</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="main.mjs"></script>
+  </head>
+  <body>
+    <pre id="container"></pre>
+  </body>
+</html>
+`], { type: 'text/html' })
+          },
+          {
+            path: 'style.css',
+            file: new Blob([`body {
+  background: rgb(0, 0, 64);
+  color: rgb(255, 255, 255);
+}
+`], { type: 'text/css' })
+          },
+          {
+            path: 'main.mjs',
+            file: new Blob([`import { print, sleep } from './util.mjs';
+
+class Main {
+  async main() {
+    // ここにコードを書く
+    print('Hello, ');
+    await sleep(1000);
+    print('World!\\n');
+  }
+}
+
+const main = new Main();
+main.main();
+`], { type: 'text/javascript' })
+          },
+          {
+            path: 'util.mjs',
+            file: new Blob([`export function print(message) {
+  window.container.insertAdjacentHTML('beforeend', \`<span>\${message}</span>\`);
+}
+
+export function sleep(delay) {
+  return new Promise(resolve => window.setTimeout(resolve, delay));
+}
+`], { type: 'text/javascript' })
+          }
+        )
+        await this.openTab('index.html', false)
+        await this.openTab('style.css', false)
+        await this.openTab('main.mjs')
         break
     }
   }

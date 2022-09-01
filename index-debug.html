@@ -35,6 +35,7 @@
           await import('./src/index.mjs')
         } catch (error) {
           document.body.textContent = error.stack
+          throw error
         }
       }())
     </script>
