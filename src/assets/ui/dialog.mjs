@@ -1,4 +1,4 @@
-import TComponent from '@haiix/tcomponent'
+import TElement from './TElement.mjs'
 import style from '../style.mjs'
 import { isTabbable, nextTabbable, previousTabbable } from '../focus.mjs'
 
@@ -56,7 +56,7 @@ style(`
   }
 `)
 
-export class Dialog extends TComponent {
+export class Dialog extends TElement {
   template () {
     return `
       <div class="${ukey}" onkeydown="this.handleKeyDown(event)" tabindex="-1">
@@ -141,7 +141,7 @@ export function createDialog (DialogClass) {
       const firstElem = nextTabbable(null, dialog.element)
       if (firstElem) {
         const lastElem = previousTabbable(null, dialog.element)
-        tabHandler = TComponent.createElement('<div style="position: absolute; overflow: hidden; width: 0;"><input onfocus="this.handleFocus(event)" tabindex="1" /></div>', {
+        tabHandler = TElement.createElement('<div style="position: absolute; overflow: hidden; width: 0;"><input onfocus="this.handleFocus(event)" tabindex="1" /></div>', {
           handleFocus (event) {
             firstElem.focus()
           }
@@ -261,7 +261,7 @@ export const prompt = createDialog(Prompt)
 
 export async function openFile (accept = '', multiple = false) {
   return await new Promise(resolve => {
-    const input = TComponent.createElement(`<input type="file" accept="${accept}" ${multiple ? 'multiple' : ''} hidden />`)
+    const input = TElement.createElement(`<input type="file" accept="${accept}" ${multiple ? 'multiple' : ''} hidden />`)
     input.onchange = event => {
       resolve(multiple ? input.files : input.files[0])
     }
