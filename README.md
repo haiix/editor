@@ -9,3 +9,5 @@ https://haiix.github.io/editor/
 - すべてクライアント上で動作し、作成したコードがサーバーに送信されることはありません。
 - 一度読み込んでしまえば、オフライン環境でも動作します。
 - Windows 10 上の Edge、Chrome で動作確認をしています。
+
+haiix268@gmail.com
