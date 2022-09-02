@@ -16,7 +16,7 @@ style(`
     align-items: center;
     outline: none;
   }
-  .${ukey} > .background {
+  .${ukey}-background {
     position: absolute;
     top: 0;
     left: 0;
@@ -24,7 +24,7 @@ style(`
     bottom: 0;
     z-index: -1;
   }
-  .${ukey} > .dialog {
+  .${ukey}-container {
     background: #FFF;
     border: 1px solid #999;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
@@ -33,38 +33,82 @@ style(`
     color: #000;
     background: #FFF;
   }
-  .${ukey} > .dialog > .title {
+  .${ukey}-title {
     flex: none;
     padding: 4px;
     color: #000;
     background: #EEE;
   }
-  .${ukey} > .dialog > .body {
+  .${ukey}-body {
     flex: auto;
     padding: 10px;
   }
-  .${ukey} > .dialog > .buttons {
+  .${ukey}-buttons {
     flex: none;
     display: flex;
     justify-content: flex-end;
     padding: 0 5px;
   }
-  .${ukey} > .dialog > .buttons > button {
+  .${ukey}-buttons > button {
     width: 75px;
     margin: 5px;
     white-space: nowrap;
   }
 `)
 
-export class Dialog extends TElement {
+export default class TDialog extends TElement {
+  static create (DialogClass) {
+    return async function (...args) {
+      await new Promise(resolve => window.requestAnimationFrame(resolve)) // keydownイベントが連続実行されるのを防ぐ
+      const lastFocused = document.activeElement
+      let dialog
+      let tabHandler = null
+      const result = await new Promise(resolve => {
+        dialog = new DialogClass(Object.assign({ resolve }, { arguments: args }))
+        document.body.appendChild(dialog.element)
+        const firstElem = nextTabbable(null, dialog.element)
+        if (firstElem) {
+          const lastElem = previousTabbable(null, dialog.element)
+          tabHandler = TElement.createElement('<div style="position: absolute; overflow: hidden; width: 0;"><input onfocus="this.handleFocus(event)" tabindex="1" /></div>', {
+            handleFocus (event) {
+              firstElem.focus()
+            }
+          })
+          document.body.insertBefore(tabHandler, document.body.firstChild)
+          dialog.element.addEventListener('keydown', event => {
+            if (event.keyCode === 9 && event.ctrlKey === false && event.altKey === false) {
+              const f = isTabbable(event.target)
+              if (event.shiftKey && (!f || event.target === firstElem)) {
+                event.preventDefault()
+                lastElem.focus()
+              } else if (!event.shiftKey && (!f || event.target === lastElem)) {
+                event.preventDefault()
+                firstElem.focus()
+              }
+            }
+          })
+          firstElem.focus()
+          if (firstElem instanceof window.HTMLInputElement) firstElem.select()
+        }
+        if (dialog.main) dialog.main()
+      })
+      document.body.removeChild(dialog.element)
+      if (tabHandler) document.body.removeChild(tabHandler)
+      lastFocused.focus()
+      await new Promise(resolve => window.requestAnimationFrame(resolve)) // keydownイベントが連続実行されるのを防ぐ
+      return result
+    }
+  }
+
   template () {
+    this.tagName = 't-dialog'
     return `
       <div class="${ukey}" onkeydown="this.handleKeyDown(event)" tabindex="-1">
-        <div class="background"></div>
-        <div class="dialog">
-          <div id="title" class="title">${this.titleTemplate()}</div>
-          <div id="body" class="body">${this.bodyTemplate()}</div>
-          <div id="buttons" class="buttons">${this.buttonsTemplate()}</div>
+        <div class="${ukey}-background"></div>
+        <div class="${ukey}-container">
+          <div id="title" class="${ukey}-title">${this.titleTemplate()}</div>
+          <div id="body" class="${ukey}-body">${this.bodyTemplate()}</div>
+          <div id="buttons" class="${ukey}-buttons">${this.buttonsTemplate()}</div>
         </div>
       </div>
     `
@@ -83,7 +127,7 @@ export class Dialog extends TElement {
   }
 
   constructor (attr = {}, nodes = []) {
-    super()
+    super(attr, nodes)
     this.resolve = attr.resolve
   }
 
@@ -129,50 +173,7 @@ export class Dialog extends TElement {
   }
 }
 
-export function createDialog (DialogClass) {
-  return async function (...args) {
-    await new Promise(resolve => window.requestAnimationFrame(resolve)) // keydownイベントが連続実行されるのを防ぐ
-    const lastFocused = document.activeElement
-    let dialog
-    let tabHandler = null
-    const result = await new Promise(resolve => {
-      dialog = new DialogClass(Object.assign({ resolve }, { arguments: args }))
-      document.body.appendChild(dialog.element)
-      const firstElem = nextTabbable(null, dialog.element)
-      if (firstElem) {
-        const lastElem = previousTabbable(null, dialog.element)
-        tabHandler = TElement.createElement('<div style="position: absolute; overflow: hidden; width: 0;"><input onfocus="this.handleFocus(event)" tabindex="1" /></div>', {
-          handleFocus (event) {
-            firstElem.focus()
-          }
-        })
-        document.body.insertBefore(tabHandler, document.body.firstChild)
-        dialog.element.addEventListener('keydown', event => {
-          if (event.keyCode === 9 && event.ctrlKey === false && event.altKey === false) {
-            const f = isTabbable(event.target)
-            if (event.shiftKey && (!f || event.target === firstElem)) {
-              event.preventDefault()
-              lastElem.focus()
-            } else if (!event.shiftKey && (!f || event.target === lastElem)) {
-              event.preventDefault()
-              firstElem.focus()
-            }
-          }
-        })
-        firstElem.focus()
-        if (firstElem instanceof window.HTMLInputElement) firstElem.select()
-      }
-      if (dialog.main) dialog.main()
-    })
-    document.body.removeChild(dialog.element)
-    if (tabHandler) document.body.removeChild(tabHandler)
-    lastFocused.focus()
-    await new Promise(resolve => window.requestAnimationFrame(resolve)) // keydownイベントが連続実行されるのを防ぐ
-    return result
-  }
-}
-
-export class Alert extends Dialog {
+export class Alert extends TDialog {
   bodyTemplate () {
     return `
       <p id="text" style="white-space: pre-wrap;"></p>
@@ -193,9 +194,9 @@ export class Alert extends Dialog {
   }
 }
 
-export const alert = createDialog(Alert)
+export const alert = TDialog.create(Alert)
 
-export class Confirm extends Dialog {
+export class Confirm extends TDialog {
   bodyTemplate () {
     return `
       <p id="text" style="white-space: pre-wrap;"></p>
@@ -225,9 +226,9 @@ export class Confirm extends Dialog {
   }
 }
 
-export const confirm = createDialog(Confirm)
+export const confirm = TDialog.create(Confirm)
 
-export class Prompt extends Dialog {
+export class Prompt extends TDialog {
   bodyTemplate () {
     return `
       <form onsubmit="event.preventDefault()">
@@ -257,7 +258,7 @@ export class Prompt extends Dialog {
   }
 }
 
-export const prompt = createDialog(Prompt)
+export const prompt = TDialog.create(Prompt)
 
 export async function openFile (accept = '', multiple = false) {
   return await new Promise(resolve => {

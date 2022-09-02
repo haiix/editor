@@ -1,6 +1,6 @@
-import TComponent from '@haiix/tcomponent'
+import TElement from './assets/ui/TElement.mjs'
+import TDialog from './assets/ui/TDialog.mjs'
 import style from './assets/style.mjs'
-import { createDialog } from './assets/ui/dialog.mjs'
 
 const ukey = 'my-flie-list-context-menu'
 
@@ -42,7 +42,7 @@ style(`
   }
 `)
 
-class ContextMenu extends TComponent {
+class ContextMenu extends TElement {
   template () {
     return `
       <div class="${ukey}" id="contextMenu"
@@ -179,7 +179,7 @@ class ContextMenu extends TComponent {
 }
 
 export function createContextMenu (template) {
-  return createDialog(class extends ContextMenu {
+  return TDialog.create(class extends ContextMenu {
     menuTemplate () {
       return template
     }

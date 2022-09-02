@@ -5,7 +5,7 @@ import hold from './assets/hold.mjs'
 import TElement from './assets/ui/TElement.mjs'
 import TList from './assets/ui/TList.mjs'
 import TSplitter from './assets/ui/TSplitter.mjs'
-import { alert, confirm, prompt, Dialog, createDialog } from './assets/ui/dialog.mjs'
+import TDialog, { alert, confirm, prompt } from './assets/ui/TDialog.mjs'
 import {} from './MaterialIcons.mjs'
 import { createContextMenu } from './menu.mjs'
 import IdbFile from './IdbFile.mjs'
@@ -427,7 +427,7 @@ export default class App extends TElement {
   }
 
   async handleSelectTemplate (event) {
-    const result = await createDialog(class extends Dialog {
+    const result = await TDialog.create(class extends TDialog {
       titleTemplate () {
         return 'テンプレートを選択してください'
       }

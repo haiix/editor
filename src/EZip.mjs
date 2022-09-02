@@ -1,19 +1,42 @@
 import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
 import Encoding from 'encoding-japanese'
-import TComponent from '@haiix/tcomponent'
+import TDialog, { openFile, Prompt } from './assets/ui/TDialog.mjs'
 import style from './assets/style.mjs'
-import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
 
 const EXT = '.zip'
 
-const saveDialog = createDialog(class extends Dialog {
+const ukey = 'my-save-dialog'
+style(`
+  .${ukey}-body label {
+    display: block;
+    white-space: nowrap;
+    height: 24px;
+  }
+  .${ukey}-body label > span {
+    display: inline-block;
+    width: 100px;
+  }
+  .${ukey}-body details {
+    margin-top: 8px;
+  }
+  .${ukey}-body summary {
+    height: 24px;
+    color: #08E;
+    cursor: pointer;
+  }
+  .${ukey}-body summary:hover {
+    text-decoration: underline;
+  }
+`)
+
+const saveDialog = TDialog.create(class extends TDialog {
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
     this.form.name.value = attr.arguments[1]
     const password = attr.arguments[2]
     if (password) {
-      this.form['confirm-password'].value = password
       this.form.password.value = password
+      this.form['confirm-password'].value = password
       this.details.open = true
     }
   }
@@ -23,31 +46,8 @@ const saveDialog = createDialog(class extends Dialog {
   }
 
   bodyTemplate () {
-    const ukey = 'my-save-dialog-body'
-    style(`
-      .${ukey} label {
-        display: block;
-        white-space: nowrap;
-        height: 24px;
-      }
-      .${ukey} label > span {
-        display: inline-block;
-        width: 100px;
-      }
-      .${ukey} details {
-        margin-top: 8px;
-      }
-      .${ukey} summary {
-        height: 24px;
-        color: #08E;
-        cursor: pointer;
-      }
-      .${ukey} summary:hover {
-        text-decoration: underline;
-      }
-    `)
     return `
-      <form id="form" class="${ukey}" onsubmit="event.preventDefault()">
+      <form id="form" class="${ukey}-body" onsubmit="event.preventDefault()">
         <label>
           <span>ファイル名:</span>
           <input name="name" /> .zip
@@ -82,7 +82,7 @@ const saveDialog = createDialog(class extends Dialog {
   }
 })
 
-export const passwordPrompt = createDialog(class extends Prompt {
+export const passwordPrompt = TDialog.create(class extends Prompt {
   bodyTemplate () {
     return `
       <form onsubmit="event.preventDefault()">
@@ -141,7 +141,7 @@ export default class EZip {
 
   async downloadFile (name, blob) {
     const url = URL.createObjectURL(blob)
-    TComponent.createElement(`<a href="${url}" download="${name}"></a>`).click()
+    TDialog.createElement(`<a href="${url}" download="${name}"></a>`).click()
     URL.revokeObjectURL(url)
   }
 
