@@ -17,6 +17,7 @@ style(`
     background: #FFF;
     color: #000;
     user-select: none;
+    box-sizing: border-box;
   }
   .${CLASS_NAME} ul {
     margin: 0;
@@ -124,36 +125,36 @@ class TTreeItem extends TTreeBase {
     `
   }
 
-  set text (v) {
-    this._text.textContent = v
-  }
-
   get text () {
     return this._text.textContent
   }
 
-  set html (v) {
-    this._text.innerHTML = v
+  set text (v) {
+    this._text.textContent = v
   }
 
   get html () {
     return this._text.innerHTML
   }
 
-  set icon (v) {
-    this._icon.textContent = v
+  set html (v) {
+    this._text.innerHTML = v
   }
 
   get icon () {
     return this._icon.textContent
   }
 
-  set iconColor (v) {
-    this._icon.style.color = v
+  set icon (v) {
+    this._icon.textContent = v
   }
 
   get iconColor () {
     return this._icon.style.color
+  }
+
+  set iconColor (v) {
+    this._icon.style.color = v
   }
 
   get parentNode () {
@@ -161,6 +162,7 @@ class TTreeItem extends TTreeBase {
   }
 
   async expand () {
+    if (!this.isExpandable || this.isExpanded) return
     const root = this.getRootNode()
     if (root.onexpand) {
       if (this._expandIcon.textContent === 'autorenew') return
@@ -179,6 +181,7 @@ class TTreeItem extends TTreeBase {
   }
 
   async collapse () {
+    if (!this.isExpanded) return
     const root = this.getRootNode()
     if (root.oncollapse) {
       if (this._expandIcon.textContent === 'autorenew') return
@@ -199,6 +202,10 @@ class TTreeItem extends TTreeBase {
     return this.client.style.display !== 'none'
   }
 
+  get isExpandable () {
+    return this._expandIcon.textContent !== '_'
+  }
+
   set isExpandable (b) {
     if (b) {
       this._expandIcon.textContent = 'chevron_right'
@@ -206,10 +213,6 @@ class TTreeItem extends TTreeBase {
       this._expandIcon.textContent = '_'
       this.client.style.display = 'none'
     }
-  }
-
-  get isExpandable () {
-    return this._expandIcon.textContent !== '_'
   }
 
   getRootNode () {
@@ -276,6 +279,13 @@ class TTree extends TTreeBase {
     return -1
   }
 
+  get current () {
+    if (!this._lastCurrent?.classList.contains('current')) {
+      this._lastCurrent = TElement.from(this._tree.querySelector('.current'))
+    }
+    return this._lastCurrent
+  }
+
   set current (item) {
     if (!(item instanceof TTreeItem) && item != null) throw new Error('The object is not a tree item.')
     if (this._lastCurrent === item) return
@@ -286,13 +296,6 @@ class TTree extends TTreeBase {
       item._container.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     }
     this._tree.dispatchEvent(new window.CustomEvent('change', { detail: item }))
-  }
-
-  get current () {
-    if (!this._lastCurrent?.classList.contains('current')) {
-      this._lastCurrent = TElement.from(this._tree.querySelector('.current'))
-    }
-    return this._lastCurrent
   }
 
   focus () {
