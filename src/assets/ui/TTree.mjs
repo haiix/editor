@@ -208,7 +208,9 @@ class TTreeItem extends TTreeBase {
 
   set isExpandable (b) {
     if (b) {
-      this._expandIcon.textContent = 'chevron_right'
+      if (!this.isExpanded) {
+        this._expandIcon.textContent = 'chevron_right'
+      }
     } else {
       this._expandIcon.textContent = '_'
       this.client.style.display = 'none'
