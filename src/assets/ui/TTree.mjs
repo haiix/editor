@@ -26,6 +26,7 @@ style(`
     min-width: max-content;
   }
   .${CLASS_NAME} li > div {
+    position: relative;
     white-space: nowrap;
     height: 24px;
     line-height: 0;
