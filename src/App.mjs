@@ -283,41 +283,42 @@ export default class App extends TElement {
     if (this.tabs.get(path) == null) {
       // IDBからロード
       const file = await this.idbFile.getFile(path)
+      if (file != null) {
+        const view = new TList.Item({ value: path })
+        const tab = new EditorTab({ view, path, file })
 
-      const view = new TList.Item({ value: path })
-      const tab = new EditorTab({ view, path, file })
+        if (file.type.startsWith('image/')) {
+          // 画像
+          const image = new Image()
+          image.src = URL.createObjectURL(file) // TODO close時にrevoke
+          image.alt = path
+          image.onmousedown = event => event.preventDefault()
+          view.appendChild(image)
+        } else if (file.type.startsWith('audio/')) {
+          // 音声
+          const audio = new Audio()
+          audio.controls = true
+          audio.src = URL.createObjectURL(file) // TODO close時にrevoke
+          view.appendChild(audio)
+        } else if (file.type.startsWith('video/')) {
+          // 動画
+          const video = document.createElement('video')
+          video.controls = true
+          video.src = URL.createObjectURL(file) // TODO close時にrevoke
+          view.appendChild(video)
+        } else if (file.type === 'application/pdf') {
+          const iframe = document.createElement('iframe')
+          iframe.title = path
+          iframe.src = URL.createObjectURL(file) // TODO close時にrevoke
+          view.appendChild(iframe)
+        } else {
+          await this.createEditor(tab)
+          tab.editor.focus()
+        }
 
-      if (file.type.startsWith('image/')) {
-        // 画像
-        const image = new Image()
-        image.src = URL.createObjectURL(file) // TODO close時にrevoke
-        image.alt = path
-        image.onmousedown = event => event.preventDefault()
-        view.appendChild(image)
-      } else if (file.type.startsWith('audio/')) {
-        // 音声
-        const audio = new Audio()
-        audio.controls = true
-        audio.src = URL.createObjectURL(file) // TODO close時にrevoke
-        view.appendChild(audio)
-      } else if (file.type.startsWith('video/')) {
-        // 動画
-        const video = document.createElement('video')
-        video.controls = true
-        video.src = URL.createObjectURL(file) // TODO close時にrevoke
-        view.appendChild(video)
-      } else if (file.type === 'application/pdf') {
-        const iframe = document.createElement('iframe')
-        iframe.title = path
-        iframe.src = URL.createObjectURL(file) // TODO close時にrevoke
-        view.appendChild(iframe)
-      } else {
-        await this.createEditor(tab)
-        tab.editor.focus()
+        this.tabs.appendChild(tab)
+        this.views.appendChild(view)
       }
-
-      this.tabs.appendChild(tab)
-      this.views.appendChild(view)
     }
 
     if (toSave) {
