@@ -16,6 +16,7 @@ style(`
     overflow: auto;
     background: #FFF;
     color: #000;
+    -webkit-user-select: none; /* for Safari 3+, Safari on iOS 3+ */
     user-select: none;
     box-sizing: border-box;
   }
@@ -254,13 +255,11 @@ class TTree extends TTreeBase {
     this.attrDef = [
       { name: 'onexpand', type: 'function' },
       { name: 'oncollapse', type: 'function' },
-      { name: 'ontouchstart', type: 'function' },
       { name: 'onmousedown', type: 'function' },
       { name: 'onkeydown', type: 'function' }
     ]
     return `
       <div id="_tree" tabindex="0" class="${CLASS_NAME}"
-        ontouchstart="return this._handleTreeMousedown(event)"
         onmousedown="return this._handleTreeMousedown(event)"
         onkeydown="return this._handleTreeKeydown(event)"
       >
@@ -306,10 +305,6 @@ class TTree extends TTreeBase {
   }
 
   async _handleTreeMousedown (event) {
-    if (typeof this.ontouchstart === 'function') {
-      const result = this.ontouchstart(event)
-      if (result === false || event.defaultPrevented) return
-    }
     if (typeof this.onmousedown === 'function') {
       const result = this.onmousedown(event)
       if (result === false || event.defaultPrevented) return
@@ -323,7 +318,7 @@ class TTree extends TTreeBase {
     const item = TElement.from(elem)
 
     if (event.target === item._expandIcon && item.isExpandable) {
-      if (event.type === 'touchstart' || event.button === 0) {
+      if (event.button === 0) {
         if (item.isExpanded) {
           await item.collapse()
         } else {

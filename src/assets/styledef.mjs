@@ -4,6 +4,7 @@ html, body {
   font-size: 9pt;
   color: #000;
   background: #FFF;
+  -webkit-user-select: none; /* for Safari 3+, Safari on iOS 3+ */
   user-select: none;
   cursor: default;
 }
