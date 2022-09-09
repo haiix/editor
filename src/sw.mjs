@@ -51,7 +51,7 @@ class Main {
   async createResponse (req) {
     const root = this.base + 'debug/'
     if ((req.url + '/').startsWith(root)) {
-      const url = req.url.split('?')[0].split('#')[0]
+      const url = self.decodeURI(req.url).split('?')[0].split('#')[0]
 
       const fileData = await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
         idb.cursor({
