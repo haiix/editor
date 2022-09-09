@@ -47,16 +47,39 @@ function toc (elem) {
 }
 
 export default class TElement extends TComponent {
-  // template () {
-  //   this.tagName = 't-element'
-  //   this.attrDef = []
-  //   return `
-  //     <div id='client'></div>
-  //   `
-  // }
-
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
+    // label-for
+    if (!this.constructor._labelForList) {
+      this.constructor._labelForList = (function recur (node, list, path) {
+        if (typeof node !== 'string') {
+          if (node.t === 'label' && typeof node.a.for === 'string') {
+            list.push([node.a.for, [...path]])
+          }
+          for (const [i, c] of node.c.entries()) {
+            path.push(i)
+            recur(c, list, path)
+            path.pop()
+          }
+        }
+        return list
+      }(this.constructor._parsedTemplate, [], []))
+    }
+    for (const [name, path] of this.constructor._labelForList) {
+      let forElem = this.element
+      for (const i of path) {
+        forElem = forElem.childNodes[i]
+      }
+      if (forElem.tagName === 'LABEL' && forElem.getAttribute('for') === name) {
+        const idElem = TElement.from(this[name]) ?? this[name]
+        if (idElem instanceof window.HTMLElement) {
+          const ukey = name + '_' + Math.random().toString(36).slice(2)
+          idElem.setAttribute('id', ukey)
+          forElem.setAttribute('for', ukey)
+        }
+      }
+    }
+
     initAttrs(this, attr, this.attrDef)
     this.client = this.client ?? this.element
     for (const node of nodes) {
