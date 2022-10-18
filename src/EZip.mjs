@@ -47,7 +47,7 @@ const saveDialog = TDialog.create(class extends TDialog {
 
   bodyTemplate () {
     return `
-      <form id="form" class="${ukey}-body" onsubmit="event.preventDefault()">
+      <form id="form" class="${ukey}-body" style="padding: 10px;" onsubmit="event.preventDefault()">
         <label>
           <span>ファイル名:</span>
           <input name="name" /> .zip

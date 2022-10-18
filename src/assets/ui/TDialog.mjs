@@ -41,7 +41,6 @@ style(`
   }
   .${ukey}-body {
     flex: auto;
-    padding: 10px;
   }
   .${ukey}-buttons {
     flex: none;
@@ -176,7 +175,7 @@ export default class TDialog extends TElement {
 export class Alert extends TDialog {
   bodyTemplate () {
     return `
-      <p id="text" style="white-space: pre-wrap;"></p>
+      <p id="text" style="white-space: pre-wrap; padding: 10px;"></p>
     `
   }
 
@@ -199,7 +198,7 @@ export const alert = TDialog.create(Alert)
 export class Confirm extends TDialog {
   bodyTemplate () {
     return `
-      <p id="text" style="white-space: pre-wrap;"></p>
+      <p id="text" style="white-space: pre-wrap; padding: 10px;"></p>
     `
   }
 
@@ -232,7 +231,7 @@ export class Prompt extends TDialog {
   bodyTemplate () {
     return `
       <form onsubmit="event.preventDefault()">
-        <p id="text" style="white-space: pre-wrap;"></p>
+        <p id="text" style="white-space: pre-wrap; padding: 10px;"></p>
         <input id="input" />
       </form>
     `
