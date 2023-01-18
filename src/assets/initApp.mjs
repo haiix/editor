@@ -18,6 +18,11 @@ export async function initApp (App) {
       App = (await import(App)).default
     }
     app = new App()
+    if (!app.hasOwnProperty('onerror') && !App.prototype.hasOwnProperty('onerror')) {
+      app.onerror = error => {
+        handleError(app, error, true)
+      }
+    }
     if (app.init) {
       const retVal = app.init()
       if (retVal?.then) await retVal
@@ -37,18 +42,18 @@ export async function initApp (App) {
           app.loop(t)
           window.requestAnimationFrame(loop)
         } catch (error) {
-          handleError(app, error)
+          handleError(app, error, false)
         }
       }(0))
     }
   } catch (error) {
-    handleError(app, error)
+    handleError(app, error, false)
   }
 }
 
-function handleError (app, error) {
+function handleError (app, error, selfHandle) {
   styleCtl.unlock()
-  if (app && app.onerror) {
+  if (!selfHandle && app && app.onerror) {
     app.onerror(error)
   } else {
     document.body.textContent = ''

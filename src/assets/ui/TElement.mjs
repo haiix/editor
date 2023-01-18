@@ -139,16 +139,23 @@ export default class TElement extends TComponent {
     return this.element.style
   }
 
+  set style (v) {
+    this.element.style = v
+  }
+
   appendChild (child) {
-    return this.client.appendChild(child?.element ?? child)
+    this.client.appendChild(child?.element ?? child)
+    return child
   }
 
   removeChild (child) {
-    return this.client.removeChild(child?.element ?? child)
+    this.client.removeChild(child?.element ?? child)
+    return child
   }
 
   insertBefore (child, ref) {
-    return this.client.insertBefore(child?.element ?? child, ref?.element ?? ref)
+    this.client.insertBefore(child?.element ?? child, ref?.element ?? ref)
+    return child
   }
 
   getAttribute (name) {

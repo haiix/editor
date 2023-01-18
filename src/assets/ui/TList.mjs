@@ -18,7 +18,7 @@ class TList extends TElement {
 
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
-    this._current = [...this].find(item => item.current)
+    this._current = [...this].find(item => item.classList.contains('current'))
   }
 
   appendChild (child) {
