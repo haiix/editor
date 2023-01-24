@@ -887,7 +887,12 @@ export function sleep(delay) {
     if (event.target.classList.contains('selected')) return
     event.target.classList.add('selected')
 
-    const workspaces = await this.idbFile.getAllWorkSpaces()
+    let workspaces = await this.idbFile.getAllWorkSpaces()
+    // DBの内容がクリアされている場合再作成
+    if (workspaces.length === 0) {
+      await this.idbFile.initWorkSpaces()
+      workspaces = await this.idbFile.getAllWorkSpaces()
+    }
 
     const value = await createContextMenu(`
       ${workspaces.map((data, idx) => `
