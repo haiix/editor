@@ -18,7 +18,7 @@ export async function initApp (App) {
       App = (await import(App)).default
     }
     app = new App()
-    if (!app.hasOwnProperty('onerror') && !App.prototype.hasOwnProperty('onerror')) {
+    if (!Object.prototype.hasOwnProperty.call(app, 'onerror') && !Object.prototype.hasOwnProperty.call(App, 'onerror')) {
       app.onerror = error => {
         handleError(app, error, true)
       }
