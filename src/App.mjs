@@ -404,9 +404,28 @@ export default class App extends TElement {
 
       // TypeScript
       if (path.slice(path.lastIndexOf('.')) === '.ts') {
+        // TODO CDNからトランスパイラを読み込んでいるのをモジュールから読み込むようにする
+        if (window.ts == null) {
+          await new Promise((resolve, reject) => {
+            try {
+              const url = 'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
+              const script = document.createElement('script')
+              script.onload = event => {
+                resolve()
+              }
+              script.onerror = event => {
+                reject(new Error('Failed to load: ' + url))
+              }
+              script.src = url
+              document.head.appendChild(script)
+            } catch (error) {
+              reject(error)
+            }
+          })
+        }
         srcFile = file
-        //const result = ts.transpile(tab.editor.getValue(), { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
-        const result = ts.transpile(tab.editor.getValue(), { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
+        // const result = window.ts.transpile(tab.editor.getValue(), { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
+        const result = window.ts.transpile(tab.editor.getValue(), { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
         file = new Blob([result], { type: IdbFile.prototype.getFileType('.js') })
       }
 
