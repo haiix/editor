@@ -174,6 +174,7 @@ export default class IdbFile {
             const newType = this.getFileType(_new)
             if (prevType !== newType) {
               fileData.file = new Blob([fileData.file], { type: newType })
+              fileData.srcFile = null
             }
           }
           cursor.update(fileData)

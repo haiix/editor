@@ -399,7 +399,7 @@ export default class App extends TElement {
       if (!tab.isModified) continue
 
       const path = tab.path
-      let file = new Blob([tab.editor.getValue()], { type: tab.file.type })
+      let file = new Blob([tab.editor.getValue()], { type: this.idbFile.getFileType(tab.value) })
       let srcFile = null
 
       // TypeScript
@@ -426,7 +426,7 @@ export default class App extends TElement {
         srcFile = file
         // const result = window.ts.transpile(tab.editor.getValue(), { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
         const result = window.ts.transpile(tab.editor.getValue(), { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
-        file = new Blob([result], { type: IdbFile.prototype.getFileType('.js') })
+        file = new Blob([result], { type: this.idbFile.getFileType('.js') })
       }
 
       // 保存
