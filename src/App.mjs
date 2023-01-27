@@ -282,7 +282,7 @@ export default class App extends TElement {
   async openTab (path, toSave = true) {
     if (this.tabs.get(path) == null) {
       // IDBからロード
-      const file = await this.idbFile.getFile(path)
+      const file = await this.idbFile.getFile(path, true)
       if (file != null) {
         const view = new TList.Item({ value: path })
         const tab = new EditorTab({ view, path, file })

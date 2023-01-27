@@ -37,7 +37,6 @@ class Main {
           base + 'resources/icons/icon-32.png',
           base + 'resources/icons/icon-192.png',
           base + 'resources/icons/icon-512.png',
-          base + 'resources/blank.txt',
           base + 'resources/vendor/MaterialIcons-Regular.ttf',
           'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
         ]
