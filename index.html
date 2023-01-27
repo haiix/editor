@@ -2,7 +2,6 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="description" content="コードエディターです。" />
     <meta name="theme-color" content="#eeeeee" />
@@ -10,13 +9,12 @@
     <link rel="manifest" href="./resources/app.webmanifest" />
     <link rel="icon" href="./resources/icons/icon-32.png" />
     <link rel="apple-touch-icon" href="./resources/icons/icon-192.png" />
+    <link rel="preload" as="font" href="./resources/vendor/MaterialIcons-Regular.ttf" crossorigin />
   </head>
   <body>
-    <script defer src="./dist/main.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js"></script>
-    <script nomodule>
-      document.writeln('お使いのブラウザはサポートしていません。')
-    </script>
+    <script src="./dist/main.js"></script>
+    <script nomodule>document.writeln('お使いのブラウザはサポートしていません。')</script>
+    <noscript>JavaScript が無効のため表示できません。</noscript>
   </body>
 </html>

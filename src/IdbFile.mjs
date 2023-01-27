@@ -1,6 +1,9 @@
 import * as idb from './assets/idb.mjs'
 
 export default class IdbFile {
+  /**
+   * IDB上にファイル保存用のDBを作成する
+   */
   constructor (name) {
     this.firstTime = false
     this.dbSchema = {
@@ -17,6 +20,9 @@ export default class IdbFile {
     this.workspace = 'workspace1/'
   }
 
+  /**
+   * IDB上にデフォルトのワークスペース4つを作成する
+   */
   initWorkSpaces () {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       const store = tx.objectStore('files')
@@ -26,6 +32,10 @@ export default class IdbFile {
     })
   }
 
+  /**
+   * 全ワークスペースのリストを返す
+   * @return workSpaces
+   */
   async getAllWorkSpaces () {
     const workSpaces = []
     await idb.tx(this.dbSchema, ['files'], 'readonly', tx => (
@@ -42,6 +52,10 @@ export default class IdbFile {
     return workSpaces
   }
 
+  /**
+   * 現在のワークスペースにある全フォルダと全ファイルのリストを返す
+   * @return { folders, files }
+   */
   async getAllFoldersAndFiles () {
     const folders = []
     const files = []
@@ -63,6 +77,10 @@ export default class IdbFile {
     return { folders, files }
   }
 
+  /**
+   * 現在のワークスペースにある全ファイルのリストを返す
+   * @return inputFiles
+   */
   async getAllFiles () {
     const inputFiles = []
     await idb.tx(this.dbSchema, ['files'], 'readonly', tx => (
@@ -79,6 +97,10 @@ export default class IdbFile {
     return inputFiles
   }
 
+  /**
+   * 複数のファイルをIDBに追加する
+   * @param fileDataList
+   */
   async addFiles (fileDataList) {
     await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       const store = tx.objectStore('files')
@@ -89,6 +111,11 @@ export default class IdbFile {
     })
   }
 
+  /**
+   * ファイルまたはフォルダを削除する
+   * @param path
+   * @param removePaths 実際に削除されたファイルパスのリスト
+   */
   async removeFile (path) {
     const removedPaths = []
     await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => (
@@ -106,6 +133,9 @@ export default class IdbFile {
     return removedPaths
   }
 
+  /**
+   * ワークスペースの全ファイルを削除する
+   */
   removeAllFiles () {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => (
       idb.cursor({
@@ -119,16 +149,22 @@ export default class IdbFile {
     ))
   }
 
-  async moveFile (prevPath, newPath) {
+  /**
+   * ファイルを移動する
+   * @param oldPath
+   * @param newPath
+   * @return movedPaths 実際に移動したpathのリスト
+   */
+  async moveFile (oldPath, newPath) {
     const movedPaths = []
     await idb.tx(this.dbSchema, ['files'], 'readwrite', tx => (
       idb.cursor({
         index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace + prevPath),
+        range: IDBKeyRange.lowerBound(this.workspace + oldPath),
         forEach: (fileData, cursor) => {
-          if (!(fileData.path + '/').startsWith(this.workspace + prevPath + '/')) return false
+          if (!(fileData.path + '/').startsWith(this.workspace + oldPath + '/')) return false
           const _prev = fileData.path
-          const _new = this.workspace + newPath + fileData.path.slice((this.workspace + prevPath).length)
+          const _new = this.workspace + newPath + fileData.path.slice((this.workspace + oldPath).length)
 
           // console.log('mv ' + _prev + ' ' + _new)
 
@@ -149,6 +185,11 @@ export default class IdbFile {
     return movedPaths
   }
 
+  /**
+   * ファイルを保存する
+   * @param path
+   * @param file
+   */
   putFile (path, file, srcFile = null) {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       return idb.cursor({
@@ -163,6 +204,11 @@ export default class IdbFile {
     })
   }
 
+  /**
+   * ファイルを取得する
+   * @param path
+   * @return file
+   */
   async getFile (path, isSrc = false) {
     const result = (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
       idb.get(tx.objectStore('files').index('path'), this.workspace + path)
@@ -170,6 +216,10 @@ export default class IdbFile {
     return (isSrc && result?.srcFile) || result?.file
   }
 
+  /**
+   * ワークスペースの設定を保存する
+   * @param setting
+   */
   putWorkSpaceSetting (setting) {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       return idb.cursor({
@@ -183,6 +233,10 @@ export default class IdbFile {
     })
   }
 
+  /**
+   * ワークスペースの設定を取得する
+   * @return setting
+   */
   async getWorkSpaceSetting () {
     const project = (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
       idb.get(tx.objectStore('files').index('path'), this.workspace.slice(0, -1))
@@ -190,6 +244,10 @@ export default class IdbFile {
     return this.createDefaultSetting(project?.setting)
   }
 
+  /**
+   * ワークスペースのデフォルト設定を取得する
+   * @return setting
+   */
   createDefaultSetting (setting) {
     setting ??= {}
     setting.fileName ??= ''

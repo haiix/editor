@@ -1,48 +1,56 @@
-import TComponent from '@haiix/tcomponent'
+import TElement from './assets/ui/TElement.mjs'
+import TDialog from './assets/ui/TDialog.mjs'
 import style from './assets/style.mjs'
-import { createDialog } from './assets/ui/dialog.mjs'
 
-class ContextMenu extends TComponent {
+const ukey = 'my-flie-list-context-menu'
+
+style(`
+  .${ukey} {
+    display: inline-block;
+    position: absolute;
+    background: #FFF;
+    border: 1px solid #999;
+    padding: 2px 0;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  .${ukey} > * {
+    display: block;
+    line-height: 22px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .${ukey} > * > * {
+    vertical-align: middle;
+  }
+  .${ukey} > * > .material-icons {
+    font-size: 16px;
+    position: relative;
+    top: -2px;
+    left: -6px;
+  }
+  .${ukey} > hr {
+    border-top: 1px solid #CCC;
+    margin: 4px;
+  }
+  .${ukey} > .disabled {
+    color: #999;
+  }
+  .${ukey} > .current:not(.disabled) {
+    border: 1px solid #BDF;
+    background: #DEF;
+  }
+`)
+
+class ContextMenu extends TElement {
   template () {
-    const ukey = 'my-flie-list-context-menu'
-    style(`
-      .${ukey} {
-        display: inline-block;
-        position: absolute;
-        background: #FFF;
-        border: 1px solid #999;
-        padding: 2px 0;
-        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-      }
-      .${ukey} > * {
-        display: block;
-        line-height: 20px;
-        padding: 0 10px;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-      .${ukey} > * > * {
-        vertical-align: middle;
-      }
-      .${ukey} > * > .material-icons {
-        font-size: 16px;
-        position: relative;
-        left: -6px;
-      }
-      .${ukey} > hr {
-        border-top: 1px solid #CCC;
-        margin: 4px;
-      }
-      .${ukey} > .current:not(.disabled) {
-        border: 1px solid #BDF;
-        background: #DEF;
-      }
-    `)
     return `
       <div class="${ukey}" id="contextMenu"
         onmousedown="return this.handleMouseDown(event)"
         onmouseup="return this.handleMouseUp(event)"
-        onmouseleave="return this.handleMouseLeave(event)">
+        onmouseleave="return this.handleMouseLeave(event)"
+        oncontextmenu="event.preventDefault()"
+      >
         ${this.menuTemplate()}
       </div>
     `
@@ -154,6 +162,7 @@ class ContextMenu extends TComponent {
   }
 
   handleMouseUp (event) {
+    if (event.button !== 0 && event.button !== 2) return
     let target = event.target
     while (target && target.parentNode !== this.element) {
       target = target.parentNode
@@ -170,7 +179,7 @@ class ContextMenu extends TComponent {
 }
 
 export function createContextMenu (template) {
-  return createDialog(class extends ContextMenu {
+  return TDialog.create(class extends ContextMenu {
     menuTemplate () {
       return template
     }

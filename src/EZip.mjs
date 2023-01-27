@@ -1,22 +1,42 @@
-/* global zip */
-// import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
-// import { BlobReader, BlobWriter } from '@zip.js/zip.js/lib/core/io.js'
-// import { ZipReader } from '@zip.js/zip.js/lib/core/zip-reader.js'
-// import { ZipWriter } from '@zip.js/zip.js/lib/core/zip-writer.js'
-import TComponent from '@haiix/tcomponent'
+import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
+import Encoding from 'encoding-japanese'
+import TDialog, { openFile, Prompt } from './assets/ui/TDialog.mjs'
 import style from './assets/style.mjs'
-import { Dialog, createDialog, openFile, Prompt } from './assets/ui/dialog.mjs'
 
 const EXT = '.zip'
 
-const saveDialog = createDialog(class extends Dialog {
+const ukey = 'my-save-dialog'
+style(`
+  .${ukey}-body label {
+    display: block;
+    white-space: nowrap;
+    height: 24px;
+  }
+  .${ukey}-body label > span {
+    display: inline-block;
+    width: 100px;
+  }
+  .${ukey}-body details {
+    margin-top: 8px;
+  }
+  .${ukey}-body summary {
+    height: 24px;
+    color: #08E;
+    cursor: pointer;
+  }
+  .${ukey}-body summary:hover {
+    text-decoration: underline;
+  }
+`)
+
+const saveDialog = TDialog.create(class extends TDialog {
   constructor (attr = {}, nodes = []) {
     super(attr, nodes)
     this.form.name.value = attr.arguments[1]
     const password = attr.arguments[2]
     if (password) {
-      this.form['confirm-password'].value = password
       this.form.password.value = password
+      this.form['confirm-password'].value = password
       this.details.open = true
     }
   }
@@ -26,31 +46,8 @@ const saveDialog = createDialog(class extends Dialog {
   }
 
   bodyTemplate () {
-    const ukey = 'my-save-dialog-body'
-    style(`
-      .${ukey} label {
-        display: block;
-        white-space: nowrap;
-        height: 24px;
-      }
-      .${ukey} label > span {
-        display: inline-block;
-        width: 100px;
-      }
-      .${ukey} details {
-        margin-top: 8px;
-      }
-      .${ukey} summary {
-        height: 24px;
-        color: #08E;
-        cursor: pointer;
-      }
-      .${ukey} summary:hover {
-        text-decoration: underline;
-      }
-    `)
     return `
-      <form id="form" class="${ukey}" onsubmit="event.preventDefault()">
+      <form id="form" class="${ukey}-body" style="padding: 10px;" onsubmit="event.preventDefault()">
         <label>
           <span>ファイル名:</span>
           <input name="name" /> .zip
@@ -85,7 +82,7 @@ const saveDialog = createDialog(class extends Dialog {
   }
 })
 
-export const passwordPrompt = createDialog(class extends Prompt {
+export const passwordPrompt = TDialog.create(class extends Prompt {
   bodyTemplate () {
     return `
       <form onsubmit="event.preventDefault()">
@@ -131,12 +128,12 @@ export default class EZip {
   }
 
   async createZip (inputFiles, options) {
-    const blobWriter = new zip.BlobWriter('application/zip')
-    const writer = new zip.ZipWriter(blobWriter, options)
+    const blobWriter = new BlobWriter('application/zip')
+    const writer = new ZipWriter(blobWriter, options)
     for (const { file, path } of inputFiles) {
       const foptions = {}
       foptions.directory = !file
-      await writer.add(path, file ? new zip.BlobReader(file) : null, foptions)
+      await writer.add(path, file ? new BlobReader(file) : null, foptions)
     }
     await writer.close()
     return await blobWriter.getData()
@@ -144,7 +141,7 @@ export default class EZip {
 
   async downloadFile (name, blob) {
     const url = URL.createObjectURL(blob)
-    TComponent.createElement(`<a href="${url}" download="${name}"></a>`).click()
+    TDialog.createElement(`<a href="${url}" download="${name}"></a>`).click()
     URL.revokeObjectURL(url)
   }
 
@@ -167,8 +164,16 @@ export default class EZip {
   }
 
   async readZip (zipFile, options = {}) {
-    const reader = new zip.ZipReader(new zip.BlobReader(zipFile))
+    const reader = new ZipReader(new BlobReader(zipFile))
     const entries = await reader.getEntries()
+
+    // SJIS
+    for (const entry of entries) {
+      if (!entry.filenameUTF8) {
+        entry.filename = Encoding.codeToString(Encoding.convert(entry.rawFilename, { to: 'UNICODE' }))
+        entry.filenameUTF8 = true
+      }
+    }
 
     // 最上位のフォルダーは取り除く
     let prefix = ''
@@ -196,7 +201,7 @@ export default class EZip {
 
         const path = (entry.filename.slice(-1) === '/' ? entry.filename.slice(0, -1) : entry.filename).slice(prefix.length)
 
-        const file = entry.directory ? null : await entry.getData(new zip.BlobWriter(this.getMimeFromExt(entry.filename)), options)
+        const file = entry.directory ? null : await entry.getData(new BlobWriter(this.getMimeFromExt(entry.filename)), options)
         return { path, file }
       }.bind(this))
     )
@@ -211,15 +216,36 @@ export default class EZip {
       css: 'text/css',
       html: 'text/html',
       htm: 'text/html',
+      txt: 'text/plain',
+      md: 'text/markdown',
       json: 'application/json',
       xml: 'application/xml',
+      pdf: 'application/pdf',
+      bmp: 'image/bmp',
       gif: 'image/gif',
-      png: 'image/png',
+      ico: 'image/vnd.microsoft.icon',
       jpeg: 'image/jpeg',
       jpg: 'image/jpeg',
+      png: 'image/png',
       svg: 'image/svg+xml',
-      txt: 'text/plain',
-      md: 'text/markdown'
-    }[ext] || null
+      tif: 'image/tiff',
+      tiff: 'image/tiff',
+      webp: 'image/webp',
+      m3u: 'audio/x-mpegurl',
+      m4a: 'audio/x-m4a',
+      mid: 'audio/midi',
+      midi: 'audio/midi',
+      mp3: 'audio/mpeg',
+      oga: 'audio/ogg',
+      ogg: 'audio/ogg',
+      wav: 'audio/wav',
+      weba: 'audio/webm',
+      avi: 'video/x-msvideo',
+      mp4: 'video/mp4',
+      mpg: 'video/mpeg',
+      mpeg: 'video/mpeg',
+      ogv: 'video/ogg',
+      webm: 'video/webm'
+    }[ext] ?? null
   }
 }

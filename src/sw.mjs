@@ -29,13 +29,16 @@ class Main {
           base + 'dist/main.js',
           base + 'dist/1.js',
           base + 'dist/191.js',
+          base + 'dist/498.js',
+          base + 'dist/588.js',
+          base + 'dist/834.js',
           base + 'resources/app.webmanifest',
+          base + 'resources/blank.txt',
           base + 'resources/icons/icon-32.png',
           base + 'resources/icons/icon-192.png',
           base + 'resources/icons/icon-512.png',
           base + 'resources/blank.txt',
           base + 'resources/vendor/MaterialIcons-Regular.ttf',
-          'https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.3.18/dist/zip.min.js'
           'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
         ]
         const cache = await caches.open(main.namespace)
@@ -48,10 +51,9 @@ class Main {
   }
 
   async createResponse (req) {
-    let url = req.url
     const root = this.base + 'debug/'
-    if ((url + '/').startsWith(root)) {
-      url = url.split('?')[0].split('#')[0]
+    if ((req.url + '/').startsWith(root)) {
+      const url = self.decodeURI(req.url).split('?')[0].split('#')[0]
 
       const fileData = await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
         idb.cursor({
@@ -73,7 +75,7 @@ class Main {
       return new Response(res, resHeader)
     } else {
       const cache = await caches.open(this.namespace)
-      return (await cache.match(req)) || (await fetch(url))
+      return (await cache.match(req)) ?? (await fetch(req))
     }
   }
 }

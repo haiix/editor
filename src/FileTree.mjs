@@ -1,11 +1,29 @@
 import seq from '@haiix/seq'
-import Tree from './assets/ui/Tree.mjs'
+import style from './assets/style.mjs'
+import TTree from './assets/ui/TTree.mjs'
 
-export default class FileTree extends Tree {
+const ukey = 'my-file-tree'
+
+style(`
+  .${ukey} {
+    height: 0;
+    min-height: 100%;
+  }
+  .${ukey} .drop-target {
+    background: #BDF;
+  }
+`)
+
+export default class FileTree extends TTree {
   template () {
     const t = super.template()
     this.tagName = 'file-tree'
     return t
+  }
+
+  constructor (...args) {
+    super(...args)
+    this.classList.add(ukey)
   }
 
   update (folders, files) {
@@ -18,7 +36,7 @@ export default class FileTree extends Tree {
   }
 
   createItem (name, isFolder) {
-    const item = new Tree.Item()
+    const item = new TTree.Item()
     item.text = name
     if (!isFolder) {
       item.isExpandable = false
@@ -54,9 +72,9 @@ export default class FileTree extends Tree {
     item.parentNode.removeChild(item)
   }
 
-  move (prevPath, newPath) {
+  move (oldPath, newPath) {
     const [folder, name] = this.getFolderAndName(newPath)
-    const item = this.getItem(prevPath)
+    const item = this.getItem(oldPath)
     item.text = name
     this.insert(folder, item)
     if (folder !== this) folder.expand()
