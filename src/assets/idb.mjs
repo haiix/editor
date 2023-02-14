@@ -1,9 +1,11 @@
-function idbOpen ({ name = '', version = 1, onupgradeneeded = null }) {
+function idbOpen ({ name = '', version = undefined, onupgradeneeded = null }) {
   return new Promise((resolve, reject) => {
     const req = self.indexedDB.open(name, version)
     req.onupgradeneeded = event => {
       try {
-        onupgradeneeded(req.result, req.transaction, event.oldVersion)
+        if (onupgradeneeded) {
+          onupgradeneeded(req.result, req.transaction, event.oldVersion)
+        }
       } catch (err) {
         reject(err)
       }
