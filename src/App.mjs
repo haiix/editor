@@ -200,6 +200,7 @@ export default class App extends TElement {
    */
   async init () {
     window.addEventListener('beforeunload', this.handleClose.bind(this))
+    window.addEventListener('resize', this.resizeEditor.bind(this))
 
     ;[this.projectSetting] = await Promise.all([
       this.idbFile.getWorkSpaceSetting(),
@@ -329,24 +330,36 @@ export default class App extends TElement {
   }
 
   /**
-   * ファイルロードのうち、CodeMirror初期化部分
+   * ファイルロードのうち、Monaco Editor初期化部分
    */
   async createEditor (tab) {
-    const [cmModule, fileText] = await Promise.all([
-      import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
+    const [/*cmModule, */fileText] = await Promise.all([
+      //import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
       tab.file.text()
     ])
 
     // Editor
-    const textarea = document.createElement('textarea')
-    textarea.value = fileText
-    tab.view.appendChild(textarea)
-
-    const cm = cmModule.init(textarea, tab.file.type)
-    cm.on('change', (cm, event) => {
+    tab.editor = monaco.editor.create(tab.view.element, {
+      value: fileText,
+      language: tab.file.type,
+      //automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
+    })
+    tab.editor.getModel().onDidChangeContent(event => {
       this.tabs.current.isModified = true
     })
-    tab.editor = cm
+  }
+
+  /**
+   * エディターリサイズ
+   */
+  resizeEditor () {
+    const item = this.tabs.current
+    if (!item) return
+    // 一度縮めてやり直さないとなぜか縮小がうまくいかない
+    item.view.style = 'width: 0; height: 0;'
+    item.editor.layout()
+    item.view.style = 'width: 100%; height: 100%;'
+    item.editor.layout()
   }
 
   /**
@@ -830,7 +843,7 @@ export function sleep(delay) {
       document.title = tab.path + ' - ' + this.name
       if (!tab.editor) return // CodeMirror以外 (画像)
       requestAnimationFrame(() => {
-        tab.editor.refresh()
+        this.resizeEditor()
         tab.editor.focus()
       })
     } else {
@@ -879,7 +892,7 @@ export function sleep(delay) {
   }
 
   handleDragSplitter () {
-    if (this.tabs.current) this.tabs.current.editor?.refresh()
+    this.resizeEditor()
   }
 
   handleMenuMouseDown (event) {

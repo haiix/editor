@@ -3,8 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <title>Haiix Editor(debug)</title>
-    <link rel="stylesheet" href="./node_modules/codemirror/lib/codemirror.css" />
-    <link rel="stylesheet" href="./node_modules/codemirror/addon/lint/lint.css" />
   </head>
   <body>
     <script type="importmap">
@@ -13,31 +11,26 @@
           "@haiix/tcomponent": "./node_modules/@haiix/tcomponent/TComponent.mjs",
           "@haiix/seq": "./node_modules/@haiix/seq/seq.mjs",
           "@zip.js/zip.js": "./node_modules/@zip.js/zip.js/index.js",
-          "encoding-japanese": "https://cdn.skypack.dev/encoding-japanese",
-          "codemirror": "./node_modules/codemirror/src/codemirror.js",
-          "codemirror/": "./node_modules/codemirror/",
-          "codemirror/lib/codemirror.css": "data:text/javascript,",
-          "codemirror/addon/lint/lint.css": "data:text/javascript,",
-          "jshint/dist/jshint.js": "data:text/javascript;base64,ZXhwb3J0IGRlZmF1bHQge30=",
-          "csslint/dist/csslint-node.js": "data:text/javascript;base64,ZXhwb3J0IGRlZmF1bHQge30="
+          "encoding-japanese": "https://cdn.skypack.dev/encoding-japanese"
         }
       }
     </script>
-    <script src="./node_modules/jshint/dist/jshint.js"></script>
-    <script src="./node_modules/csslint/dist/csslint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+    <script src="./node_modules/monaco-editor/min/vs/loader.js"></script>
     <script type="module">
-      import CodeMirror from './node_modules/codemirror/src/codemirror.js'
-      window.CodeMirror = CodeMirror
+      require.config({ paths: { vs: './node_modules/monaco-editor/min/vs' } })
+      require(['vs/editor/editor.main'], function () {
+        ;(async function () {
+          try {
+            await import('./src/index.mjs')
+          } catch (error) {
+            document.body.textContent = error.stack
+            throw error
+          }
+        }())
+      })
     </script>
     <script type="module">
-      ;(async function () {
-        try {
-          await import('./src/index.mjs')
-        } catch (error) {
-          document.body.textContent = error.stack
-          throw error
-        }
-      }())
     </script>
   </body>
 </html>
