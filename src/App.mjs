@@ -333,16 +333,16 @@ export default class App extends TElement {
    * ファイルロードのうち、Monaco Editor初期化部分
    */
   async createEditor (tab) {
-    const [/*cmModule, */fileText] = await Promise.all([
-      //import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
+    const [/* cmModule, */fileText] = await Promise.all([
+      // import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
       tab.file.text()
     ])
 
     // Editor
     tab.editor = monaco.editor.create(tab.view.element, {
       value: fileText,
-      language: tab.file.type,
-      //automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
+      language: tab.file.type
+      // automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
     })
     tab.editor.getModel().onDidChangeContent(event => {
       this.tabs.current.isModified = true
