@@ -1,4 +1,6 @@
 const webpack = require('webpack')
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const path = require('path');
 
 module.exports = {
   mode: 'production',
@@ -8,7 +10,7 @@ module.exports = {
     sw: __dirname + '/src/sw.mjs'
   },
   output: {
-    path: __dirname + '/dist',
+    path: path.resolve(__dirname, 'dist'),
     filename: '[name].js'
   },
   //devtool: 'source-map',
@@ -28,6 +30,9 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
        __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString())
+    }),
+    new MonacoWebpackPlugin({
+      languages: ['typescript', 'javascript', 'html', 'css']
     })
   ]
 }

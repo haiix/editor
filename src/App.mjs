@@ -12,6 +12,7 @@ import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
 import EditorTab from './EditorTab.mjs'
 import { ancestorNodes, getIncludingChild } from './util.mjs'
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
 
 export default class App extends TElement {
   template () {
