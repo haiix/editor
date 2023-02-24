@@ -6,6 +6,7 @@ const ukey = 't-component-ui-splitter'
 
 style(`
   .${ukey} {
+    z-index: 1;
     background: #CCC;
     cursor: w-resize;
     width: 1px;
