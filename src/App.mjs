@@ -143,7 +143,7 @@ export default class App extends TElement {
           <t-list id="sideArea" class="flex column side-area"
             oncontextmenu="return this.handleFileTreeContextMenu(event)"
           >
-            <t-list-item id="sideAreaEmpty" class="flex column fit side-area-empty current">
+            <t-list-item id="sideAreaEmpty" class="flex column fit side-area-empty">
               <p>
                 ファイルツリーが空です。<br />
                 このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
@@ -151,7 +151,7 @@ export default class App extends TElement {
                 <button class="select-template-button" onclick="return this.handleSelectTemplate(event)">ここをクリックして「index.html」を作成することもできます。</button>
               </p>
             </t-list-item>
-            <t-list-item id="fileTreeArea" class="flex column fit">
+            <t-list-item id="fileTreeArea" class="flex column fit current">
               <!-- ファイルリスト -->
               <file-tree id="fileTree"
                 ondblclick="return this.handleFileTreeDoubleClick(event)"
@@ -203,7 +203,6 @@ export default class App extends TElement {
 
     ;[this.projectSetting] = await Promise.all([
       this.idbFile.getWorkSpaceSetting(),
-      this.refreshFileTree(),
       this.registerServiceWorker()
     ])
   }
@@ -217,6 +216,7 @@ export default class App extends TElement {
       await this.idbFile.initWorkSpaces()
       await this.createTemplateFiles(1)
     } else {
+      this.refreshFileTree()
       await this.restoreTabs()
     }
   }
