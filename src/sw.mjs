@@ -29,7 +29,6 @@ class Main {
           base + 'dist/main.js',
           base + 'dist/1.js',
           base + 'dist/191.js',
-          base + 'dist/498.js',
           base + 'dist/588.js',
           base + 'dist/834.js',
           base + 'resources/app.webmanifest',
