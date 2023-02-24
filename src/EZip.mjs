@@ -1,5 +1,4 @@
 import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
-import Encoding from 'encoding-japanese'
 import TDialog, { openFile, Prompt } from './assets/ui/TDialog.mjs'
 import style from './assets/style.mjs'
 
@@ -169,8 +168,9 @@ export default class EZip {
 
     // SJIS
     for (const entry of entries) {
-      if (!entry.filenameUTF8) {
-        entry.filename = Encoding.codeToString(Encoding.convert(entry.rawFilename, { to: 'UNICODE' }))
+      if (!entry.filenameUTF8 && entry.msDosCompatible) {
+        const decoder = new TextDecoder('windows-31j')
+        entry.filename = decoder.decode(entry.rawFilename)
         entry.filenameUTF8 = true
       }
     }
