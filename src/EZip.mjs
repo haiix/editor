@@ -129,10 +129,11 @@ export default class EZip {
   async createZip (inputFiles, options) {
     const blobWriter = new BlobWriter('application/zip')
     const writer = new ZipWriter(blobWriter, options)
-    for (const { file, path } of inputFiles) {
+    for (const fileData of inputFiles) {
+      const file = fileData.srcFile ?? fileData.file
       const foptions = {}
       foptions.directory = !file
-      await writer.add(path, file ? new BlobReader(file) : null, foptions)
+      await writer.add(fileData.path, file ? new BlobReader(file) : null, foptions)
     }
     await writer.close()
     return await blobWriter.getData()

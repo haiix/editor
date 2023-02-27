@@ -253,6 +253,15 @@ export default class App extends TElement {
    * ファイルをIDBに追加する
    */
   async addFile (...fileDataList) {
+    // TypeScript
+    for (const fileData of fileDataList) {
+      const tsFile = await this.tsTranspile(fileData.path, fileData.file)
+      if (tsFile != null) {
+        fileData.srcFile = fileData.file
+        fileData.file = tsFile
+      }
+    }
+
     await this.idbFile.addFiles(fileDataList)
     this.fileTree.addFile(fileDataList)
     this.sideArea.current = this.fileTreeArea
@@ -417,36 +426,48 @@ export default class App extends TElement {
       let srcFile = null
 
       // TypeScript
-      if (path.slice(path.lastIndexOf('.')) === '.ts') {
-        // TODO CDNからトランスパイラを読み込んでいるのをモジュールから読み込むようにする
-        if (window.ts == null) {
-          await new Promise((resolve, reject) => {
-            try {
-              const url = 'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
-              const script = document.createElement('script')
-              script.onload = event => {
-                resolve()
-              }
-              script.onerror = event => {
-                reject(new Error('Failed to load: ' + url))
-              }
-              script.src = url
-              document.head.appendChild(script)
-            } catch (error) {
-              reject(error)
-            }
-          })
-        }
+      const tsFile = await this.tsTranspile(path, file, tab.editor.getValue())
+      if (tsFile != null) {
         srcFile = file
-        // const result = window.ts.transpile(tab.editor.getValue(), { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
-        const result = window.ts.transpile(tab.editor.getValue(), { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
-        file = new Blob([result], { type: this.idbFile.getFileType('.js') })
+        file = tsFile
       }
 
       // 保存
       await this.idbFile.putFile(path, file, srcFile)
       tab.isModified = false
     }
+  }
+
+  async tsTranspile (path, file, value = null) {
+    if (path.slice(path.lastIndexOf('.')) !== '.ts') return
+
+    // TODO CDNからトランスパイラを読み込んでいるのをモジュールから読み込むようにする
+    if (window.ts == null) {
+      await new Promise((resolve, reject) => {
+        try {
+          const url = 'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
+          const script = document.createElement('script')
+          script.onload = event => {
+            resolve()
+          }
+          script.onerror = event => {
+            reject(new Error('Failed to load: ' + url))
+          }
+          script.src = url
+          document.head.appendChild(script)
+        } catch (error) {
+          reject(error)
+        }
+      })
+    }
+
+    if (value == null) {
+      value = await file.text()
+    }
+
+    // const result = window.ts.transpile(value, { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
+    const result = window.ts.transpile(value, { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
+    return new Blob([result], { type: this.idbFile.getFileType('.js') })
   }
 
   handleDragOver (event) {
