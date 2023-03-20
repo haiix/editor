@@ -14,6 +14,12 @@ import EditorTab from './EditorTab.mjs'
 import { ancestorNodes, getIncludingChild } from './util.mjs'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js'
 
+monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true)
+monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+  moduleResolution: 2, // monaco.languages.typescript.ModuleResolutionKind.NodeJs
+  target: 99 // monaco.languages.typescript.ScriptTarget.ESNext
+})
+
 export default class App extends TElement {
   template () {
     const ukey = 'my-app'
@@ -323,7 +329,7 @@ export default class App extends TElement {
           iframe.src = URL.createObjectURL(file) // TODO close時にrevoke
           view.appendChild(iframe)
         } else {
-          await this.createEditor(tab)
+          await this.createEditor(tab, path)
           tab.editor.focus()
         }
 
@@ -342,17 +348,29 @@ export default class App extends TElement {
   /**
    * ファイルロードのうち、Monaco Editor初期化部分
    */
-  async createEditor (tab) {
+  async createEditor (tab, path) {
     const [/* cmModule, */fileText] = await Promise.all([
       // import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
       tab.file.text()
     ])
 
+    if (!this.editorModels) this.editorModels = Object.create(null)
+    if (!this.editorModels[path]) {
+      this.editorModels[path] = monaco.editor.createModel(
+        fileText,
+        tab.file.type,
+        // monaco.Uri.parse('inmemory://' + path)
+        monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
+      )
+    }
+    const model = this.editorModels[path]
+
     // Editor
     tab.editor = monaco.editor.create(tab.view.element, {
-      value: fileText,
-      language: tab.file.type
-      // automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
+      // value: fileText,
+      // language: tab.file.type
+      /// / automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
+      model
     })
     tab.editor.getModel().onDidChangeContent(event => {
       this.tabs.current.isModified = true

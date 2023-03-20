@@ -51,7 +51,12 @@ class Main {
   async createResponse (req) {
     const root = this.base + 'debug/'
     if ((req.url + '/').startsWith(root)) {
-      const url = self.decodeURI(req.url).split('?')[0].split('#')[0]
+      let url = self.decodeURI(req.url).split('?')[0].split('#')[0]
+
+      // 拡張子が無いものを「.ts」とみなす
+      if (url.slice(-1) !== '/' && !url.slice(url.lastIndexOf('/') + 1).includes('.')) {
+        url += '.ts'
+      }
 
       const fileData = await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
         idb.cursor({
