@@ -200,6 +200,7 @@ export default class App extends TElement {
 
     this.debugWindow = null
     this.projectSetting = null
+    this.editorModels = Object.create(null)
   }
 
   /**
@@ -354,7 +355,6 @@ export default class App extends TElement {
       tab.file.text()
     ])
 
-    if (!this.editorModels) this.editorModels = Object.create(null)
     if (!this.editorModels[path]) {
       this.editorModels[path] = monaco.editor.createModel(
         fileText,
@@ -1089,6 +1089,10 @@ export function sleep(delay) {
   async newProject (updateSetting = true) {
     // タブをすべて閉じる
     await this.closeTabs(this.tabs, false)
+    // Monaco Editorのモデルを破棄する
+    //monaco.editor.getModels().forEach(model => model.dispose())
+    Object.values(this.editorModels).forEach(model => model.dispose())
+    this.editorModels = Object.create(null)
     // 現在のファイルリストを削除
     this.idbFile.removeAllFiles()
     // ツリーを空にする
