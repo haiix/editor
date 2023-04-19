@@ -1090,7 +1090,7 @@ export function sleep(delay) {
     // タブをすべて閉じる
     await this.closeTabs(this.tabs, false)
     // Monaco Editorのモデルを破棄する
-    //monaco.editor.getModels().forEach(model => model.dispose())
+    // monaco.editor.getModels().forEach(model => model.dispose())
     Object.values(this.editorModels).forEach(model => model.dispose())
     this.editorModels = Object.create(null)
     // 現在のファイルリストを削除

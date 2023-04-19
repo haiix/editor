@@ -15,9 +15,6 @@
     "@haiix/seq": "^0.1.1",
     "@haiix/tcomponent": "^0.2.6",
     "@zip.js/zip.js": "^2.4.12",
-    "codemirror": "^5.65.1",
-    "csslint": "^1.0.5",
-    "jshint": "^2.13.4",
     "monaco-editor-webpack-plugin": "^7.0.1"
   },
   "standard": {
