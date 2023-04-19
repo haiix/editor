@@ -12,13 +12,6 @@ import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
 import EditorTab from './EditorTab.mjs'
 import { ancestorNodes, getIncludingChild } from './util.mjs'
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js'
-
-monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true)
-monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-  moduleResolution: 2, // monaco.languages.typescript.ModuleResolutionKind.NodeJs
-  target: 99 // monaco.languages.typescript.ScriptTarget.ESNext
-})
 
 export default class App extends TElement {
   template () {
@@ -212,8 +205,18 @@ export default class App extends TElement {
 
     ;[this.projectSetting] = await Promise.all([
       this.idbFile.getWorkSpaceSetting(),
-      this.registerServiceWorker()
+      this.registerServiceWorker(),
+      this.initMonaco()
     ])
+  }
+
+  async initMonaco () {
+    this.monaco = await import(/* webpackPrefetch: true */ 'monaco-editor/esm/vs/editor/editor.api.js')
+    this.monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true)
+    this.monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      moduleResolution: 2, // this.monaco.languages.typescript.ModuleResolutionKind.NodeJs
+      target: 99 // this.monaco.languages.typescript.ScriptTarget.ESNext
+    })
   }
 
   /**
@@ -356,17 +359,17 @@ export default class App extends TElement {
     ])
 
     if (!this.editorModels[path]) {
-      this.editorModels[path] = monaco.editor.createModel(
+      this.editorModels[path] = this.monaco.editor.createModel(
         fileText,
         tab.file.type,
-        // monaco.Uri.parse('inmemory://' + path)
-        monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
+        // this.monaco.Uri.parse('inmemory://' + path)
+        this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
       )
     }
     const model = this.editorModels[path]
 
     // Editor
-    tab.editor = monaco.editor.create(tab.view.element, {
+    tab.editor = this.monaco.editor.create(tab.view.element, {
       // value: fileText,
       // language: tab.file.type
       /// / automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
@@ -1090,7 +1093,7 @@ export function sleep(delay) {
     // タブをすべて閉じる
     await this.closeTabs(this.tabs, false)
     // Monaco Editorのモデルを破棄する
-    // monaco.editor.getModels().forEach(model => model.dispose())
+    // this.monaco.editor.getModels().forEach(model => model.dispose())
     Object.values(this.editorModels).forEach(model => model.dispose())
     this.editorModels = Object.create(null)
     // 現在のファイルリストを削除
