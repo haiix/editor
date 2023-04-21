@@ -252,11 +252,7 @@ export default class App extends TElement {
   async refreshFileTree () {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
     this.fileTree.update(folders, files)
-    if (folders.length === 0 && files.length === 0) {
-      this.sideArea.current = this.sideAreaEmpty
-    } else {
-      this.sideArea.current = this.fileTreeArea
-    }
+    this.refreshFileTreeArea()
   }
 
   /**
@@ -292,9 +288,7 @@ export default class App extends TElement {
     }
 
     this.fileTree.remove(path)
-    if (this.fileTree.childElementCount === 0) {
-      this.sideArea.current = this.sideAreaEmpty
-    }
+    this.refreshFileTreeArea()
   }
 
   /**
@@ -1002,11 +996,20 @@ export function sleep(delay) {
       this.mainArea.current = this.mainAreaLoading
     }
 
+    this.disposeCurrentProject()
+
     this.projectSetting = workspace.setting
     this.idbFile.workspace = workspace.path + '/'
-    await this.refreshFileTree()
 
+    await this.refreshFileTree()
     await this.restoreTabs()
+  }
+
+  disposeCurrentProject () {
+    // Monaco Editorのモデルを破棄する
+    // this.monaco.editor.getModels().forEach(model => model.dispose())
+    Object.values(this.editorModels).forEach(model => model.dispose())
+    this.editorModels = Object.create(null)
   }
 
   /**
@@ -1092,18 +1095,27 @@ export function sleep(delay) {
   async newProject (updateSetting = true) {
     // タブをすべて閉じる
     await this.closeTabs(this.tabs, false)
-    // Monaco Editorのモデルを破棄する
-    // this.monaco.editor.getModels().forEach(model => model.dispose())
-    Object.values(this.editorModels).forEach(model => model.dispose())
-    this.editorModels = Object.create(null)
+    this.disposeCurrentProject()
     // 現在のファイルリストを削除
     this.idbFile.removeAllFiles()
     // ツリーを空にする
     this.fileTree.textContent = ''
-    this.sideArea.current = this.sideAreaEmpty
+    this.refreshFileTreeArea()
+    // 設定を初期化
     if (updateSetting) {
       this.projectSetting = this.idbFile.createDefaultSetting()
       await this.idbFile.putWorkSpaceSetting(this.projectSetting)
+    }
+  }
+
+  /**
+   * ファイルツリー表示領域を更新
+   */
+  refreshFileTreeArea () {
+    if (this.fileTree.childElementCount === 0) {
+      this.sideArea.current = this.sideAreaEmpty
+    } else {
+      this.sideArea.current = this.fileTreeArea
     }
   }
 
