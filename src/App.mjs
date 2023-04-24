@@ -644,7 +644,7 @@ export function sleep(delay) {
 
   handleFileTreeDoubleClick (event) {
     if (event.target.classList.contains('expand-icon')) return // ツリーの展開アイコン
-    if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
+    if (!this.fileTree.currentIsFile) return
     return this.openTab(this.fileTree.getPath())
   }
 
@@ -680,6 +680,7 @@ export function sleep(delay) {
           const fileData = command === 'newFile' ? { path, file: new Blob([''], { type }) } : { path }
           try {
             await this.addFile(fileData)
+            this.fileTree.focus()
             return
           } catch (error) {
             if (error.name === 'ConstraintError') {
@@ -693,9 +694,8 @@ export function sleep(delay) {
       case 'rename':
       {
         const oldName = this.fileTree.current.text
-        const isFolder = this.fileTree.current.isExpandable
 
-        const newName = await this.inputFileName(isFolder ? 'フォルダー名' : 'ファイル名', oldName, '名前の変更')
+        const newName = await this.inputFileName(this.fileTree.currentIsFile ? 'ファイル名' : 'フォルダー名', oldName, '名前の変更')
         if (!newName) return
 
         let path = this.fileTree.getPath(this.fileTree.current.parentNode)
@@ -704,12 +704,11 @@ export function sleep(delay) {
       }
       case 'delete':
       {
-        const isFolder = this.fileTree.current.isExpandable
-        if (!await confirm((isFolder ? 'フォルダー' : 'ファイル') + ' "' + this.fileTree.current.text + '" を削除しますか?')) break
+        if (!await confirm((this.fileTree.currentIsFile ? 'ファイル' : 'フォルダー') + ' "' + this.fileTree.current.text + '" を削除しますか?')) break
         return this.deleteCurrentFileOrFolder()
       }
       case 'open':
-        if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
+        if (!this.fileTree.currentIsFile) return
         return this.openTab(this.fileTree.getPath())
       default:
         throw new Error('Undefiend command: ' + command)
@@ -823,7 +822,7 @@ export function sleep(delay) {
 
           // エディターへのドロップ
           if (dropRect.elem === this.mainArea.element) {
-            if (!this.fileTree.current || this.fileTree.current.isExpandable) return // フォルダー
+            if (!this.fileTree.currentIsFile) return
             return this.openTab(this.fileTree.getPath())
           }
 

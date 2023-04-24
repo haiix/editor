@@ -131,4 +131,11 @@ export default class FileTree extends TTree {
     if (path !== '') path = path + '/'
     return path
   }
+
+  /**
+   * カレントがフォルダーか否か
+   */
+  get currentIsFile () {
+    return this.current && !this.current.isExpandable
+  }
 }
