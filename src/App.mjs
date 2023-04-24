@@ -13,6 +13,46 @@ import FileTree from './FileTree.mjs'
 import EditorTab from './EditorTab.mjs'
 import { ancestorNodes, getIncludingChild } from './util.mjs'
 
+// https://github.com/Microsoft/monaco-editor/issues/926
+function switchModelToNewUri (monaco, oldModel, newUri) {
+  const newModel = monaco.editor.createModel(
+    oldModel.getValue(),
+    oldModel.getLanguageId(),
+    newUri
+  )
+
+  const fsPath = newUri.fsPath // \\filename
+  const formatted = newUri.toString() // file:///filename
+
+  const editStacks = oldModel._commandManager._undoRedoService._editStacks
+
+  const newEditStacks = new Map()
+
+  function adjustEditStack (c) {
+    c.actual.model = newModel
+    c.resourceLabel = fsPath
+    c.resourceLabels = [fsPath]
+    c.strResource = formatted
+    c.strResources = [formatted]
+  }
+
+  editStacks.forEach((s) => {
+    s.resourceLabel = fsPath
+    s.strResource = formatted
+
+    s._future.forEach(adjustEditStack)
+    s._past.forEach(adjustEditStack)
+
+    newEditStacks.set(formatted, s)
+  })
+
+  newModel._commandManager._undoRedoService._editStacks = newEditStacks
+
+  oldModel.dispose()
+
+  return newModel
+}
+
 export default class App extends TElement {
   template () {
     const ukey = 'my-app'
@@ -281,8 +321,14 @@ export default class App extends TElement {
 
     const removedPaths = await this.idbFile.removeFile(path)
 
-    // タブが開いている場合は閉じる
     for (const path of removedPaths) {
+      // Monaco Editorのモデルを破棄する
+      if (this.editorModels[path]) {
+        this.editorModels[path].dispose()
+        delete this.editorModels[path]
+      }
+
+      // タブが開いている場合は閉じる
       const tab = this.tabs.get(path)
       if (tab) await this.closeTabs([tab])
     }
@@ -784,8 +830,15 @@ export function sleep(delay) {
 
     const movedPaths = await this.idbFile.moveFile(oldPath, newPath)
 
-    // タブのパスを更新
     for (const [_old, _new] of movedPaths) {
+      // Monaco Editorのモデルを作り直す
+      if (this.editorModels[_old]) {
+        this.editorModels[_new] = switchModelToNewUri(this.monaco, this.editorModels[_old], _new)
+        delete this.editorModels[_old]
+        this.tabs.childNodes.find(tab => tab.value === _old)?.editor.setModel(this.editorModels[_new])
+      }
+
+      // タブのパスを更新
       const tab = this.tabs.get(_old)
       if (tab) tab.path = _new
       await this.saveTabs()
