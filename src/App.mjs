@@ -188,7 +188,7 @@ export default class App extends TElement {
     this.version = '0.1.0'
     // TODO DB定義をService Workerと共通化
     this.namespace = location.pathname.slice(1, location.pathname.lastIndexOf('/'))
-    this.base = location.protocol + '//' + location.host + '/' + this.namespace + '/'
+    this.base = location.protocol + '//' + location.host + '/' + (this.namespace === '' ? '': this.namespace + '/')
     this.idbFile = new IdbFile(this.namespace)
 
     this.debugWindow = null
