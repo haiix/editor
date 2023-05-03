@@ -6,7 +6,7 @@ class Main {
   constructor () {
     // TODO DB定義をメインスクリプトと共通化
     this.namespace = location.pathname.slice(1, location.pathname.lastIndexOf('/'))
-    this.base = location.protocol + '//' + location.host + '/' + this.namespace + '/'
+    this.base = location.protocol + '//' + location.host + '/' + (this.namespace === '' ? '' : this.namespace + '/')
     this.dbSchema = {
       name: this.namespace,
       version: 1,
