@@ -268,7 +268,7 @@ export default class App extends TElement {
       await this.idbFile.initWorkSpaces()
       await this.createTemplateFiles(1)
     } else {
-      this.refreshFileTree()
+      this.refreshFileTreeAndCreateModels()
       await this.restoreTabs()
     }
   }
@@ -289,9 +289,21 @@ export default class App extends TElement {
   /**
    * ファイルツリー全体をIDBから読み込んで更新する
    */
-  async refreshFileTree () {
+  async refreshFileTreeAndCreateModels () {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
     this.fileTree.update(folders, files)
+
+    // モデル作成
+    const models = await Promise.all(
+      files
+        .filter(file => file.path.slice(-3) === '.ts' || file.path.slice(-3) === '.js' || file.path.slice(-4) === '.mjs')
+        .map(file => this.createEditorModel(file.path, file.srcFile || file.file))
+    )
+    // モデルのパスを解決した状態で表示を更新する
+    for (const model of models) {
+      model.setValue(model.getValue())
+    }
+
     this.refreshFileTreeArea()
   }
 
@@ -393,33 +405,27 @@ export default class App extends TElement {
    * ファイルロードのうち、Monaco Editor初期化部分
    */
   async createEditor (tab, path) {
-    const [/* cmModule, */fileText] = await Promise.all([
-      // import(/* webpackPrefetch: true */ './CodeMirror.mjs'),
-      tab.file.text()
-    ])
-
-    if (!this.editorModels[path]) {
-      const model = this.monaco.editor.createModel(
-        fileText,
-        tab.file.type,
-        // this.monaco.Uri.parse('inmemory://' + path)
-        this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
-      )
-      model.updateOptions({ tabSize: 2 })
-      this.editorModels[path] = model
-    }
-    const model = this.editorModels[path]
+    const model = await this.createEditorModel(path, tab.file)
 
     // Editor
-    tab.editor = this.monaco.editor.create(tab.view.element, {
-      // value: fileText,
-      // language: tab.file.type
-      /// / automaticLayout: true // 自動リサイズ。intervalでwindowサイズを監視されて重いらしいので使わない
-      model
-    })
+    tab.editor = this.monaco.editor.create(tab.view.element, { model })
     tab.editor.getModel().onDidChangeContent(event => {
       this.tabs.current.isModified = true
     })
+  }
+
+  async createEditorModel (path, file) {
+    if (this.editorModels[path]) return this.editorModels[path]
+
+    const model = this.monaco.editor.createModel(
+      await file.text(),
+      file.type,
+      this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
+    )
+    model.updateOptions({ tabSize: 2 })
+    this.editorModels[path] = model
+
+    return model
   }
 
   /**
@@ -932,7 +938,7 @@ export function sleep(delay) {
     if (tab) {
       this.views.value = tab.path
       document.title = tab.path + ' - ' + this.name
-      if (!tab.editor) return // CodeMirror以外 (画像)
+      if (!tab.editor) return // Editor以外 (画像等)
       requestAnimationFrame(() => {
         this.resizeEditor()
         tab.editor.focus()
@@ -1055,7 +1061,7 @@ export function sleep(delay) {
     this.projectSetting = workspace.setting
     this.idbFile.workspace = workspace.path + '/'
 
-    await this.refreshFileTree()
+    await this.refreshFileTreeAndCreateModels()
     await this.restoreTabs()
   }
 
