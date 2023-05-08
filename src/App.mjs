@@ -399,12 +399,14 @@ export default class App extends TElement {
     ])
 
     if (!this.editorModels[path]) {
-      this.editorModels[path] = this.monaco.editor.createModel(
+      const model = this.monaco.editor.createModel(
         fileText,
         tab.file.type,
         // this.monaco.Uri.parse('inmemory://' + path)
         this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
       )
+      model.updateOptions({ tabSize: 2 })
+      this.editorModels[path] = model
     }
     const model = this.editorModels[path]
 
