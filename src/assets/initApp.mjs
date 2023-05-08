@@ -9,14 +9,6 @@ styleCtl.lock()
 export async function initApp (App) {
   let app = null
   try {
-    if (typeof App === 'string') {
-      if (App.slice(0, 2) === './') {
-        App = base + '/' + App.slice(2)
-      } else if (App.slice(0, 1) !== '/') {
-        throw new Error()
-      }
-      App = (await import(App)).default
-    }
     app = new App()
     if (!Object.prototype.hasOwnProperty.call(app, 'onerror') && !Object.prototype.hasOwnProperty.call(App.prototype, 'onerror')) {
       app.onerror = error => {
