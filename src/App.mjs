@@ -293,16 +293,7 @@ export default class App extends TElement {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
     this.fileTree.update(folders, files)
 
-    // モデル作成
-    const models = await Promise.all(
-      files
-        .filter(file => file.path.slice(-3) === '.ts' || file.path.slice(-3) === '.js' || file.path.slice(-4) === '.mjs')
-        .map(file => this.createEditorModel(file.path, file.srcFile || file.file))
-    )
-    // モデルのパスを解決した状態で表示を更新する
-    for (const model of models) {
-      model.setValue(model.getValue())
-    }
+    this.createEditorModels(files)
 
     this.refreshFileTreeArea()
   }
@@ -320,9 +311,24 @@ export default class App extends TElement {
       }
     }
 
+    this.createEditorModels(fileDataList)
+
     await this.idbFile.addFiles(fileDataList)
     this.fileTree.addFile(fileDataList)
     this.sideArea.current = this.fileTreeArea
+  }
+
+  async createEditorModels (files) {
+    // モデル作成
+    const models = await Promise.all(
+      files
+        .filter(file => file.path.slice(-3) === '.ts' || file.path.slice(-3) === '.js' || file.path.slice(-4) === '.mjs')
+        .map(file => this.createEditorModel(file.path, file.srcFile || file.file))
+    )
+    // モデルのパスを解決した状態で表示を更新する
+    for (const model of models) {
+      model.setValue(model.getValue())
+    }
   }
 
   /**
