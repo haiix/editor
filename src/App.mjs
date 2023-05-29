@@ -410,22 +410,24 @@ export default class App extends TElement {
     // Editor
     tab.editor = this.monaco.editor.create(tab.view.element, { model })
     tab.editor.getModel().onDidChangeContent(event => {
-      this.tabs.current.isModified = true
+      if (this.tabs.current) this.tabs.current.isModified = true
     })
   }
 
-  async createEditorModel (path, file) {
-    if (this.editorModels[path]) return this.editorModels[path]
-
-    const model = this.monaco.editor.createModel(
-      await file.text(),
-      file.type,
-      this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
-    )
-    model.updateOptions({ tabSize: 2 })
-    this.editorModels[path] = model
-
-    return model
+  createEditorModel (path, file) {
+    if (!this.editorModels[path]) {
+      this.editorModels[path] = async function () {
+        const model = this.monaco.editor.createModel(
+          await file.text(),
+          file.type,
+          this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
+        )
+        model.updateOptions({ tabSize: 2 })
+        this.editorModels[path] = model
+        return model
+      }.call(this)
+    }
+    return this.editorModels[path]
   }
 
   /**
