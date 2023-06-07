@@ -85,7 +85,7 @@ class Main {
       } else if (!fileData.file) {
         resHeader = { status: 301, headers: { Location: url + '/' } }
       } else {
-        res = fileData.file
+        res = fileData.distFile ?? fileData.file
       }
       return new Response(res, resHeader)
     } else {

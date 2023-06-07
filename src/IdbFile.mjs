@@ -191,14 +191,14 @@ export default class IdbFile {
    * @param path
    * @param file
    */
-  putFile (path, file, srcFile = null) {
+  putFile (path, file, distFile = null) {
     return idb.tx(this.dbSchema, ['files'], 'readwrite', tx => {
       return idb.cursor({
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.only(this.workspace + path),
         forEach (value, cursor) {
           value.file = file
-          value.srcFile = srcFile
+          value.distFile = distFile
           cursor.update(value)
         }
       })
@@ -214,7 +214,7 @@ export default class IdbFile {
     const result = (await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
       idb.get(tx.objectStore('files').index('path'), this.workspace + path)
     ))
-    return (isSrc && result?.srcFile) || result?.file
+    return (!isSrc && result?.distFile) || result?.file
   }
 
   /**

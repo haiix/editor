@@ -306,8 +306,7 @@ export default class App extends TElement {
     for (const fileData of fileDataList) {
       const tsFile = await this.tsTranspile(fileData.path, fileData.file)
       if (tsFile != null) {
-        fileData.srcFile = fileData.file
-        fileData.file = tsFile
+        fileData.distFile = tsFile
       }
     }
 
@@ -323,7 +322,7 @@ export default class App extends TElement {
     const models = await Promise.all(
       files
         .filter(file => file.path.slice(-3) === '.ts' || file.path.slice(-3) === '.js' || file.path.slice(-4) === '.mjs')
-        .map(file => this.createEditorModel(file.path, file.srcFile || file.file))
+        .map(file => this.createEditorModel(file.path, file.file))
     )
     // モデルのパスを解決した状態で表示を更新する
     for (const model of models) {
@@ -499,18 +498,13 @@ export default class App extends TElement {
       if (!tab.isModified) continue
 
       const path = tab.path
-      let file = new Blob([tab.editor.getValue()], { type: this.idbFile.getFileType(tab.value) })
-      let srcFile = null
+      const file = new Blob([tab.editor.getValue()], { type: this.idbFile.getFileType(tab.value) })
 
       // TypeScript
-      const tsFile = await this.tsTranspile(path, file, tab.editor.getValue())
-      if (tsFile != null) {
-        srcFile = file
-        file = tsFile
-      }
+      const distFile = await this.tsTranspile(path, file, tab.editor.getValue())
 
       // 保存
-      await this.idbFile.putFile(path, file, srcFile)
+      await this.idbFile.putFile(path, file, distFile)
       tab.isModified = false
     }
   }
@@ -629,10 +623,9 @@ export default class App extends TElement {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>My App</title>
     <link rel="stylesheet" href="style.css">
+    <script type="module" src="main"></script>
   </head>
   <body>
-    <div id="container"></div>
-    <script src="main"></script>
   </body>
 </html>
 `], { type: 'text/html' })
