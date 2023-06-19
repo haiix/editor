@@ -263,6 +263,7 @@ export default class App extends TElement {
    * 画面表示後処理
    */
   async main () {
+    this.typescript = await import(/* webpackPrefetch: true */ 'typescript');
     if (this.idbFile.firstTime) {
       // WorkSpace作成
       await this.idbFile.initWorkSpaces()
@@ -512,32 +513,12 @@ export default class App extends TElement {
   async tsTranspile (path, file, value = null) {
     if (path.slice(path.lastIndexOf('.')) !== '.ts') return
 
-    // TODO CDNからトランスパイラを読み込んでいるのをモジュールから読み込むようにする
-    if (window.ts == null) {
-      await new Promise((resolve, reject) => {
-        try {
-          const url = 'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
-          const script = document.createElement('script')
-          script.onload = event => {
-            resolve()
-          }
-          script.onerror = event => {
-            reject(new Error('Failed to load: ' + url))
-          }
-          script.src = url
-          document.head.appendChild(script)
-        } catch (error) {
-          reject(error)
-        }
-      })
-    }
-
     if (value == null) {
       value = await file.text()
     }
 
-    // const result = window.ts.transpile(value, { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
-    const result = window.ts.transpile(value, { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
+    // const result = this.typescript.transpile(value, { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
+    const result = this.typescript.transpile(value, { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
     return new Blob([result], { type: this.idbFile.getFileType('.js') })
   }
 

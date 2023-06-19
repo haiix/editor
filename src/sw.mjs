@@ -33,10 +33,12 @@ class Main {
           base + 'dist/288.js',
           base + 'dist/377.js',
           base + 'dist/401.js',
+          base + 'dist/423.js',
           base + 'dist/571.js',
           base + 'dist/712.js',
           base + 'dist/717.js',
           base + 'dist/834.js',
+          base + 'dist/871.js',
           base + 'dist/css.worker.js',
           base + 'dist/editor.worker.js',
           base + 'dist/fa2cc0ab9f0bec2b3365.ttf',
@@ -48,8 +50,7 @@ class Main {
           base + 'resources/icons/icon-32.png',
           base + 'resources/icons/icon-192.png',
           base + 'resources/icons/icon-512.png',
-          base + 'resources/vendor/MaterialIcons-Regular.ttf',
-          'https://cdn.jsdelivr.net/npm/typescript@4.6.4/lib/typescript.min.js'
+          base + 'resources/vendor/MaterialIcons-Regular.ttf'
         ]
         const cache = await caches.open(main.namespace)
         await cache.addAll(urls)
