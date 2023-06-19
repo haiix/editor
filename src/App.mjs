@@ -263,11 +263,11 @@ export default class App extends TElement {
    * 画面表示後処理
    */
   async main () {
-    this.typescript = await import(/* webpackPrefetch: true */ 'typescript');
+    this.typescript = await import(/* webpackPrefetch: true */ 'typescript')
     if (this.idbFile.firstTime) {
       // WorkSpace作成
       await this.idbFile.initWorkSpaces()
-      await this.createTemplateFiles(1)
+      await this.createTemplateFiles(2)
     } else {
       this.refreshFileTreeAndCreateModels()
       await this.restoreTabs()
