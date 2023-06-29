@@ -528,7 +528,10 @@ export default class App extends TElement {
 
   handleDrop (event) {
     event.preventDefault()
-    return this.addFile(...seq(event.dataTransfer.files).map(file => ({ path: file.name, file: new Blob([file], { type: file.type }) })))
+    return this.addFile(...seq(event.dataTransfer.files).map(file => {
+      const type = this.idbFile.getFileType(file.name) ?? file.type // .tsファイルがブラウザ依存にならないようにする
+      return { path: file.name, file: new Blob([file], { type }) }
+    }))
   }
 
   handleKeyDown (event) {
