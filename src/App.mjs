@@ -233,6 +233,7 @@ export default class App extends TElement {
 
     this.debugWindow = null
     this.projectSetting = null
+    this.refreshingMonacoView = null
     this.editorModels = Object.create(null)
   }
 
@@ -327,7 +328,8 @@ export default class App extends TElement {
     )
     // モデルのパスを解決した状態で表示を更新する
     for (const model of models) {
-      model.setValue(model.getValue())
+      // model.setValue(model.getValue())
+      this.refreshMonacoView(model)
     }
   }
 
@@ -416,7 +418,10 @@ export default class App extends TElement {
     // Editor
     tab.editor = this.monaco.editor.create(tab.view.element, { model })
     tab.editor.getModel().onDidChangeContent(event => {
-      if (this.tabs.current) this.tabs.current.isModified = true
+      // console.log('editor onchange')
+      if (model !== this.refreshingMonacoView) {
+        if (this.tabs.current) this.tabs.current.isModified = true
+      }
     })
   }
 
@@ -854,10 +859,25 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     })
   }
 
+  /**
+   * Monacoエディターのimport解決を更新する
+   */
+  refreshMonacoView (model) {
+    this.refreshingMonacoView = model
+    // console.log('refreshMonacoView start')
+    // TODO: undo/redoを消さずにimportを更新したい。現状エディターの先頭に1文字追加して削除することで解決しているが、正しいやり方を調べる
+    model.applyEdits([{ range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }, text: ' ' }])
+    model.applyEdits([{ range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 2 }, text: null }])
+    // model.setValue(model.getValue())
+    // console.log('refreshMonacoView end')
+    this.refreshingMonacoView = null
+  }
+
   async handleTabChange (event) {
     const tab = this.tabs.current
     if (tab) {
       this.views.value = tab.path
+      this.refreshMonacoView(this.editorModels[tab.path])
       document.title = tab.path + ' - ' + this.name
       if (!tab.editor) return // Editor以外 (画像等)
       requestAnimationFrame(() => {
