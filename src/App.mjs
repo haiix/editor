@@ -863,6 +863,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
    * Monacoエディターのimport解決を更新する
    */
   refreshMonacoView (model) {
+    if (model == null) return
     this.refreshingMonacoView = model
     // console.log('refreshMonacoView start')
     // TODO: undo/redoを消さずにimportを更新したい。現状エディターの先頭に1文字追加して削除することで解決しているが、正しいやり方を調べる
