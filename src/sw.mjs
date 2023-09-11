@@ -26,9 +26,9 @@ class Main {
       event.waitUntil(async function (main) {
         const urls = [
           base,
-          base + 'dist/4a477f66bfd4e4d3cf68.ttf',
           base + 'dist/8.js',
           base + 'dist/75.js',
+          base + 'dist/123.js',
           base + 'dist/134.js',
           base + 'dist/288.js',
           base + 'dist/377.js',
@@ -39,9 +39,9 @@ class Main {
           base + 'dist/717.js',
           base + 'dist/834.js',
           base + 'dist/871.js',
-          base + 'dist/997.js',
           base + 'dist/css.worker.js',
           base + 'dist/editor.worker.js',
+          base + 'dist/fa2cc0ab9f0bec2b3365.ttf',
           base + 'dist/html.worker.js',
           base + 'dist/main.js',
           base + 'dist/ts.worker.js',
