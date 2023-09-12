@@ -244,13 +244,30 @@ export default class App extends TElement {
     window.addEventListener('beforeunload', this.handleClose.bind(this))
     window.addEventListener('resize', this.resizeEditor.bind(this))
 
-    ;[this.projectSetting] = await Promise.all([
-      this.idbFile.getWorkSpaceSetting(),
+    await Promise.all([
+      this.restoreWorkpace(),
       this.registerServiceWorker(),
       this.initMonaco()
     ])
   }
 
+  /**
+   * ワークスペース復元
+   */
+  async restoreWorkpace () {
+    const lastWorkSpace = window.localStorage.getItem('lastWorkSpace')
+    if (lastWorkSpace != null) {
+      const workspaces = await this.idbFile.getAllWorkSpaces()
+      if (workspaces.find(workspace => workspace.path + '/' === lastWorkSpace) != null) {
+        this.idbFile.workspace = lastWorkSpace
+      }
+    }
+    this.projectSetting = await this.idbFile.getWorkSpaceSetting()
+  }
+
+  /**
+   * Monaco Editorの設定
+   */
   async initMonaco () {
     this.monaco = await import(/* webpackPrefetch: true */ 'monaco-editor/esm/vs/editor/editor.api.js')
     this.monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true)
@@ -276,6 +293,7 @@ export default class App extends TElement {
   }
 
   handleClose (event) {
+    window.localStorage.setItem('lastWorkSpace', this.idbFile.workspace)
     if (this.debugWindow && !this.debugWindow.closed) {
       this.debugWindow.close()
     }
@@ -999,16 +1017,16 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     if (!workspace) return
     if (this.idbFile.workspace === workspace.path + '/') return
 
+    // 現在のプロジェクトを閉じる
     if (this.tabs.childElementCount > 0) {
       await this.closeTabs(this.tabs, false)
       this.mainArea.current = this.mainAreaLoading
     }
-
     this.disposeCurrentProject()
 
+    // 読み込み
     this.projectSetting = workspace.setting
     this.idbFile.workspace = workspace.path + '/'
-
     await this.refreshFileTreeAndCreateModels()
     await this.restoreTabs()
   }
