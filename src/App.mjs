@@ -979,12 +979,18 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     }
 
     const value = await createContextMenu(`
-      ${workspaces.map((data, idx) => `
-        <div data-value="${idx}">
-          <i class="material-icons">${data.path + '/' === this.idbFile.workspace ? 'check' : '_'}</i>
-          ${data.label}
-        </div>
-      `).join('')}
+      ${workspaces.map((data, idx) => {
+        const icon = data.path + '/' === this.idbFile.workspace ? 'check' : '_'
+        let label = data.label
+        if (data.setting?.fileName) {
+          let fileName = data.setting.fileName
+          if (fileName.endsWith('.zip')) {
+            fileName = fileName.slice(0, -4)
+          }
+          label += ' - ' + fileName
+        }
+        return `<div data-value="${idx}"><i class="material-icons">${icon}</i>${label}</div>`
+      }).join('')}
     `)(event.target)
     const workspace = workspaces[value]
 
