@@ -999,15 +999,15 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     const value = await createContextMenu(`
       ${workspaces.map((data, idx) => {
         const icon = data.path + '/' === this.idbFile.workspace ? 'check' : '_'
-        let label = data.label
+        let label = '(無題)'
         if (data.setting?.fileName) {
           let fileName = data.setting.fileName
           if (fileName.endsWith('.zip')) {
             fileName = fileName.slice(0, -4)
           }
-          label += ' - ' + fileName
+          label = fileName
         }
-        return `<div data-value="${idx}"><i class="material-icons">${icon}</i>${label}</div>`
+        return `<div data-value="${idx}"><i class="material-icons">${icon}</i>${idx + 1}: ${label}</div>`
       }).join('')}
     `)(event.target)
     const workspace = workspaces[value]
