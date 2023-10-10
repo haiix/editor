@@ -273,7 +273,8 @@ export default class App extends TElement {
     this.monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true)
     this.monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       moduleResolution: 2, // this.monaco.languages.typescript.ModuleResolutionKind.NodeJs
-      target: 99 // this.monaco.languages.typescript.ScriptTarget.ESNext
+      target: 99, // this.monaco.languages.typescript.ScriptTarget.ESNext
+      strict: true
     })
   }
 
