@@ -274,7 +274,8 @@ export default class App extends TElement {
     this.monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       moduleResolution: 2, // this.monaco.languages.typescript.ModuleResolutionKind.NodeJs
       target: 99, // this.monaco.languages.typescript.ScriptTarget.ESNext
-      strict: true
+      strict: true,
+      noUncheckedIndexedAccess: true // 配列のインデックスアクセスを厳密にチェックする
     })
   }
 
