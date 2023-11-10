@@ -98,7 +98,7 @@ export default class EZip {
   }
 
   async save (callback) {
-    const name = this.setting.fileName.slice(-4) === '.zip' ? this.setting.fileName.slice(0, -4) : this.setting.fileName
+    const name = this.setting.fileName.endsWith('.zip') ? this.setting.fileName.slice(0, -4) : this.setting.fileName
     const formValues = await saveDialog('', name, this.setting.password)
     if (!formValues) return false
 
@@ -106,7 +106,7 @@ export default class EZip {
       throw new Error('パスワードが一致しません')
     }
 
-    const zipFileName = (formValues.name || 'untitled') + (formValues.name.slice(-4) === EXT ? '' : EXT)
+    const zipFileName = (formValues.name || 'untitled') + (formValues.name.endsWith(EXT) ? '' : EXT)
     const zipFilePassword = formValues.password
 
     const inputFiles = await callback()

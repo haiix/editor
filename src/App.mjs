@@ -289,8 +289,10 @@ export default class App extends TElement {
       await this.idbFile.initWorkSpaces()
       await this.createTemplateFiles(2)
     } else {
-      this.refreshFileTreeAndCreateModels()
-      await this.restoreTabs()
+      await Promise.all([
+        this.refreshFileTreeAndCreateModels(),
+        this.restoreTabs()
+      ])
     }
   }
 
@@ -315,9 +317,8 @@ export default class App extends TElement {
     const { folders, files } = await this.idbFile.getAllFoldersAndFiles()
     this.fileTree.update(folders, files)
 
-    this.createEditorModels(files)
-
     this.refreshFileTreeArea()
+    await this.createEditorModels(files)
   }
 
   /**
@@ -343,7 +344,7 @@ export default class App extends TElement {
     // モデル作成
     const models = await Promise.all(
       files
-        .filter(file => file.path.slice(-3) === '.ts' || file.path.slice(-3) === '.js' || file.path.slice(-4) === '.mjs')
+        .filter(file => file.path.endsWith('.ts') || file.path.endsWith('.js') || file.path.endsWith('.mjs'))
         .map(file => this.createEditorModel(file.path, file.file))
     )
     // モデルのパスを解決した状態で表示を更新する
@@ -536,12 +537,13 @@ export default class App extends TElement {
   }
 
   async tsTranspile (path, file, value = null) {
-    if (path.slice(path.lastIndexOf('.')) !== '.ts') return
+    if (!path.endsWith('.ts')) return
 
     if (value == null) {
       value = await file.text()
     }
 
+    path = '' // パスに".d.ts"が含まれているとコンパイルエラーになる (TODO: ちゃんと原因を調べる)
     // const result = this.typescript.transpile(value, { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
     const result = this.typescript.transpile(value, { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
     return new Blob([result], { type: this.idbFile.getFileType('.js') })
