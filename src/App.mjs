@@ -13,6 +13,16 @@ import FileTree from './FileTree.mjs'
 import EditorTab from './EditorTab.mjs'
 import { ancestorNodes, getIncludingChild } from './util.mjs'
 
+const tsCompilerOptions = {
+  module: 99, // monaco.languages.typescript.ModuleKind.ESNext
+  target: 99, // monaco.languages.typescript.ScriptTarget.ESNext
+  jsx: 2, // monaco.languages.typescript.JsxEmit.React
+  strict: true,
+  noUncheckedIndexedAccess: true // 配列のインデックスアクセスを厳密にチェックする
+  // inlineSourceMap: true,
+  // sourceMap: true
+}
+
 // https://github.com/Microsoft/monaco-editor/issues/926
 function switchModelToNewUri (monaco, oldModel, newUri) {
   const newModel = monaco.editor.createModel(
@@ -271,12 +281,7 @@ export default class App extends TElement {
   async initMonaco () {
     this.monaco = await import(/* webpackPrefetch: true */ 'monaco-editor/esm/vs/editor/editor.api.js')
     this.monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true)
-    this.monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-      moduleResolution: 2, // this.monaco.languages.typescript.ModuleResolutionKind.NodeJs
-      target: 99, // this.monaco.languages.typescript.ScriptTarget.ESNext
-      strict: true,
-      noUncheckedIndexedAccess: true // 配列のインデックスアクセスを厳密にチェックする
-    })
+    this.monaco.languages.typescript.typescriptDefaults.setCompilerOptions(tsCompilerOptions)
   }
 
   /**
@@ -536,16 +541,10 @@ export default class App extends TElement {
     }
   }
 
-  async tsTranspile (path, file, value = null) {
+  async tsTranspile (path, file, code = null) {
     if (!path.endsWith('.ts')) return
-
-    if (value == null) {
-      value = await file.text()
-    }
-
-    path = '' // パスに".d.ts"が含まれているとコンパイルエラーになる (TODO: ちゃんと原因を調べる)
-    // const result = this.typescript.transpile(value, { inlineSourceMap: true, module: 5, sourceMap: true, target: 'ES2018' }, path)
-    const result = this.typescript.transpile(value, { inlineSourceMap: false, module: 5, sourceMap: false, target: 'ES2018' }, path)
+    if (code == null) code = await file.text()
+    const result = this.typescript.transpile(code, tsCompilerOptions)
     return new Blob([result], { type: this.idbFile.getFileType('.js') })
   }
 
