@@ -26,7 +26,8 @@ export default class TSplitter extends TElement {
   template () {
     this.tagName = 't-splitter'
     this.attrDef = [
-      { name: 'ondrag', type: 'function' }
+      { name: 'ondrag', type: 'function' },
+      { name: 'position', type: 'string' }
     ]
     return `
       <div class="${ukey}" ontouchstart="return this.handleSplitter(event)" onmousedown="return this.handleSplitter(event)"></div>
@@ -35,13 +36,19 @@ export default class TSplitter extends TElement {
 
   handleSplitter (event) {
     event.preventDefault()
-    const target = this.element.previousElementSibling
+    let target; let m = 1
+    if (this.position === 'right') {
+      target = this.element.nextElementSibling
+      m = -1
+    } else {
+      target = this.element.previousElementSibling
+    }
     const [px] = getPageCoordinate(event)
-    const ox = px - window.getComputedStyle(target).width.slice(0, -2)
+    const ox = px * m - window.getComputedStyle(target).width.slice(0, -2)
     hold({
       cursor: window.getComputedStyle(event.target).cursor,
       ondrag: px => {
-        target.style.width = Math.max(0, px - ox) + 'px'
+        target.style.width = Math.max(0, px * m - ox) + 'px'
         if (this.ondrag) this.ondrag()
       }
     })

@@ -11,7 +11,7 @@ import { createContextMenu } from './menu.mjs'
 import IdbFile from './IdbFile.mjs'
 import FileTree from './FileTree.mjs'
 import EditorTab from './EditorTab.mjs'
-import { ancestorNodes, getIncludingChild } from './util.mjs'
+import { ancestorNodes, getIncludingChild, sleep } from './util.mjs'
 
 const tsCompilerOptions = {
   module: 99, // monaco.languages.typescript.ModuleKind.ESNext
@@ -227,6 +227,11 @@ export default class App extends TElement {
               <t-list id="views" class="views flex fit row"></t-list>
             </t-list-item>
           </t-list>
+
+          <t-splitter position="right" ondrag="return this.handleDragSplitter(event)" />
+          <div id="previewArea" class="flex column" style="width: 0px;">
+            <iframe id="previewFrame" class="flex fit" style="border: none;"></iframe>
+          </div>
         </div>
       </div>
     `
@@ -241,9 +246,9 @@ export default class App extends TElement {
     this.base = location.protocol + '//' + location.host + '/' + (this.namespace === '' ? '' : this.namespace + '/')
     this.idbFile = new IdbFile(this.namespace)
 
-    this.debugWindow = null
     this.projectSetting = null
     this.refreshingMonacoView = null
+    this.serviceWorkerRegistration = null
     this.editorModels = Object.create(null)
   }
 
@@ -254,11 +259,13 @@ export default class App extends TElement {
     window.addEventListener('beforeunload', this.handleClose.bind(this))
     window.addEventListener('resize', this.resizeEditor.bind(this))
 
-    await Promise.all([
-      this.restoreWorkpace(),
+    const [serviceWorkerRegistration] = await Promise.all([
       this.registerServiceWorker(),
+      this.restoreWorkpace(),
       this.initMonaco()
     ])
+
+    this.serviceWorkerRegistration = serviceWorkerRegistration
   }
 
   /**
@@ -442,7 +449,10 @@ export default class App extends TElement {
     const model = await this.createEditorModel(path, tab.file)
 
     // Editor
-    tab.editor = this.monaco.editor.create(tab.view.element, { model })
+    tab.editor = this.monaco.editor.create(tab.view.element, {
+      model,
+      minimap: { enabled: false }
+    })
     tab.editor.getModel().onDidChangeContent(event => {
       // console.log('editor onchange')
       if (model !== this.refreshingMonacoView) {
@@ -571,7 +581,7 @@ export default class App extends TElement {
         break
       case 116: // F5
         event.preventDefault()
-        return this.run()
+        return this.run(event)
     }
   }
 
@@ -1073,10 +1083,18 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     }
   }
 
+  async waitServiceWorkerActivated () {
+    for (let i = 0; i < 50; i++) {
+      if (this.serviceWorkerRegistration?.active?.state === 'activated') return
+      await sleep(100)
+    }
+    throw new Error('Service Worker is not activated.')
+  }
+
   /**
    * 別ウィンドウで「index.html」を開く
    */
-  async run () {
+  async run (event) {
     // 実行前に保存
     await Promise.all(seq(this.tabs).map(tab => this.saveTab(tab)))
 
@@ -1085,7 +1103,19 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       return
     }
 
-    if (this.debugWindow && !this.debugWindow.closed) {
+    await this.waitServiceWorkerActivated()
+
+    if (event.ctrlKey) { // Ctrlキーを押している場合は別タブで開く
+      window.open(this.base + 'debug/' + this.idbFile.workspace)
+    } else {
+      if (this.previewArea.style.width === '0px') {
+        this.previewArea.style.width = '300px'
+        this.resizeEditor()
+      }
+      this.previewFrame.src = this.base + 'debug/' + this.idbFile.workspace
+    }
+
+    /* if (this.debugWindow && !this.debugWindow.closed) {
       await this.debugWindow.fetch(this.base + 'resources/blank.txt') // not foundになることがあるので対策
       this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
     } else {
@@ -1094,7 +1124,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       this.debugWindow.onload = async function () {
         this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
       }.bind(this)
-    }
+    } */
   }
 
   /**

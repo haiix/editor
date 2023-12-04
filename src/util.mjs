@@ -1,3 +1,7 @@
+export function sleep (delay) {
+  return new Promise(resolve => window.setTimeout(resolve, delay))
+}
+
 /**
  * 対象ノードの親ノードをたどる
  * @param  {HTMLElement}  node - 対象ノード
