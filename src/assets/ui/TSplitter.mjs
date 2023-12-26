@@ -20,6 +20,13 @@ style(`
     position: relative;
     left: -4px;
   }
+  .${ukey}.holding::after {
+    /*background: blue;*/
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
 `)
 
 export default class TSplitter extends TElement {
@@ -45,11 +52,15 @@ export default class TSplitter extends TElement {
     }
     const [px] = getPageCoordinate(event)
     const ox = px * m - window.getComputedStyle(target).width.slice(0, -2)
+    this.element.classList.add('holding')
     hold({
       cursor: window.getComputedStyle(event.target).cursor,
       ondrag: px => {
         target.style.width = Math.max(0, px * m - ox) + 'px'
         if (this.ondrag) this.ondrag()
+      },
+      ondragend: () => {
+        this.element.classList.remove('holding')
       }
     })
   }
