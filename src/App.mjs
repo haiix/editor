@@ -108,6 +108,7 @@ export default class App extends TElement {
       }
       .${ukey} .menubar > * {
         padding: 2px 8px;
+        background: #EEE;
         border: 1px solid transparent;
       }
       .${ukey} .menubar > :hover {
@@ -230,6 +231,16 @@ export default class App extends TElement {
 
           <t-splitter position="right" ondrag="return this.handleDragSplitter(event)" />
           <div id="previewArea" class="flex column" style="width: 0px;">
+            <!-- プレビューエリアのメニュー -->
+            <div id="previewMenu" class="menubar flex row" style="position: relative; overflow: hidden;">
+              <i class="material-icons m-icon" style="color: #333;" onclick="return this.handlePreviewRefresh(event)">
+                refresh
+              </i>
+              <i class="material-icons m-icon" style="color: #333; position: absolute; right: 0;" onclick="return this.handlePreviewClose(event)">
+                close
+              </i>
+            </div>
+            <!-- プレビューエリア -->
             <iframe id="previewFrame" class="flex fit" style="border: none;"></iframe>
           </div>
         </div>
@@ -1108,11 +1119,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     if (event.ctrlKey) { // Ctrlキーを押している場合は別タブで開く
       window.open(this.base + 'debug/' + this.idbFile.workspace)
     } else {
-      if (this.previewArea.style.width === '0px') {
-        this.previewArea.style.width = '300px'
-        this.resizeEditor()
-      }
-      this.previewFrame.src = this.base + 'debug/' + this.idbFile.workspace
+      this.handlePreviewRefresh(event)
     }
 
     /* if (this.debugWindow && !this.debugWindow.closed) {
@@ -1125,6 +1132,29 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
       }.bind(this)
     } */
+  }
+
+  /**
+   * プレビューエリアを再読み込み
+   */
+  handlePreviewRefresh (event) {
+    console.clear()
+    if (this.previewArea.style.width === '0px') {
+      this.previewArea.style.width = '300px'
+      this.resizeEditor()
+    }
+    this.previewFrame.src = this.base + 'debug/' + this.idbFile.workspace
+  }
+
+  /**
+   * プレビューエリアを閉じる
+   */
+  handlePreviewClose (event) {
+    this.previewFrame.src = 'about:blank'
+    if (this.previewArea.style.width !== '0px') {
+      this.previewArea.style.width = '0px'
+      this.resizeEditor()
+    }
   }
 
   /**
