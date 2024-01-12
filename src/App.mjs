@@ -493,7 +493,7 @@ export default class App extends TElement {
    */
   resizeEditor () {
     const item = this.tabs.current
-    if (!item) return
+    if (!item || !item.editor) return
     // 一度縮めてやり直さないとなぜか縮小がうまくいかない
     item.view.style = 'width: 0; height: 0;'
     item.editor.layout()
