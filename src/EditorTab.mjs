@@ -6,23 +6,21 @@ export default class EditorTab extends TList.Item {
     style(`
       .editor-tabs {
         border-bottom: 1px solid #999;
+        background-color: #EEE;
         flex-wrap: wrap;
-        align-items: flex-end;
       }
       .editor-tabs > li {
-        padding: 1px 5px 2px;
+        margin: 4px -1px -1px 0;
+        padding: 1px 5px;
         border: 1px solid #999;
         border-bottom: none;
-        background: #EEE;
-        margin-right: -1px;
-        position: relative;
-        bottom: -1px;
+        background-color: #EEE;
       }
       .editor-tabs > li:hover {
         background: #DEF;
       }
       .editor-tabs > li.current {
-        padding-bottom: 4px;
+        margin-top: 2px;
         background: #FFF;
       }
       .editor-tabs > li > * {
