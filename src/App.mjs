@@ -18,9 +18,11 @@ const tsCompilerOptions = {
   target: 99, // monaco.languages.typescript.ScriptTarget.ESNext
   jsx: 2, // monaco.languages.typescript.JsxEmit.React
   strict: true,
-  noUncheckedIndexedAccess: true // 配列のインデックスアクセスを厳密にチェックする
+  noUncheckedIndexedAccess: true, // 配列のインデックスアクセスを厳密にチェックする
   // inlineSourceMap: true,
   // sourceMap: true
+  allowJs: true,
+  checkJs: true,
 }
 
 // https://github.com/Microsoft/monaco-editor/issues/926
@@ -459,10 +461,15 @@ export default class App extends TElement {
   async createEditor (tab, path) {
     const model = await this.createEditorModel(path, tab.file)
 
+    // JavaScriptは createModel()のlanguageに'typescript'、
+    // create()のlanguageに'javascript'をセットするとeditorで認識されるらしい(?)
+    // (参考) https://github.com/microsoft/monaco-editor/issues/989
+
     // Editor
     tab.editor = this.monaco.editor.create(tab.view.element, {
       model,
-      minimap: { enabled: false }
+      minimap: { enabled: false },
+      language: tab.file.type.includes('javascript') ? 'javascript' : null
     })
     tab.editor.getModel().onDidChangeContent(event => {
       // console.log('editor onchange')
@@ -477,7 +484,7 @@ export default class App extends TElement {
       this.editorModels[path] = (async function () {
         const model = this.monaco.editor.createModel(
           await file.text(),
-          file.type,
+          (file.type.includes('typescript') || file.type.includes('javascript')) ? 'typescript' : file.type,
           this.monaco.Uri.parse(this.base + 'debug/' + this.idbFile.workspace + path)
         )
         model.updateOptions({ tabSize: 2 })
