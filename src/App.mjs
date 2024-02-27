@@ -22,7 +22,7 @@ const tsCompilerOptions = {
   // inlineSourceMap: true,
   // sourceMap: true
   allowJs: true,
-  checkJs: true,
+  checkJs: true
 }
 
 // https://github.com/Microsoft/monaco-editor/issues/926
@@ -444,7 +444,7 @@ export default class App extends TElement {
         } else {
           await this.createEditor(tab, path)
           tab.editor.focus()
-          view.classList.add('editor-view'); // ツールチップが隠れないようにする
+          view.classList.add('editor-view') // ツールチップが隠れないようにする
         }
 
         this.tabs.appendChild(tab)
