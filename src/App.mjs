@@ -134,6 +134,7 @@ export default class App extends TElement {
       }
       .${ukey} .main-area {
         background: #EEE;
+        z-index: 2;
       }
       .${ukey} .main-area > li:not(.current) {
         display: none;
@@ -143,8 +144,8 @@ export default class App extends TElement {
         align-items: center;
         padding: 0 4em;
       }
-      .${ukey} .tab-views {
-        overflow: hidden;
+      .${ukey} .editor-tabs {
+        overflow-x: clip;
       }
       .${ukey} .views {
         background: #EEE;
@@ -157,6 +158,8 @@ export default class App extends TElement {
         display: none;
         position: relative;
         z-index: 0;
+      }
+      .${ukey} .views > li:not(.editor-view) {
         overflow: auto;
       }
       .${ukey} .views > li.current {
@@ -441,6 +444,7 @@ export default class App extends TElement {
         } else {
           await this.createEditor(tab, path)
           tab.editor.focus()
+          view.classList.add('editor-view'); // ツールチップが隠れないようにする
         }
 
         this.tabs.appendChild(tab)
