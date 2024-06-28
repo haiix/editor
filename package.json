@@ -6,6 +6,10 @@
   "repository": "https://github.com/haiix/editor.git",
   "author": "haiix",
   "license": "MIT",
+  "scripts": {
+    "build": "npx webpack",
+    "test": "npx standard src"
+  },
   "devDependencies": {
     "css-loader": "^6.7.0",
     "style-loader": "^3.3.1",

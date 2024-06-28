@@ -270,6 +270,7 @@ export default class IdbFile {
       js: 'text/javascript',
       mjs: 'text/javascript',
       ts: 'text/typescript',
+      tsx: 'text/typescript',
       css: 'text/css',
       html: 'text/html',
       htm: 'text/html',

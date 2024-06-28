@@ -22,7 +22,8 @@ const tsCompilerOptions = {
   // inlineSourceMap: true,
   // sourceMap: true
   allowJs: true,
-  checkJs: true
+  checkJs: true,
+  allowImportingTsExtensions: true
 }
 
 // https://github.com/Microsoft/monaco-editor/issues/926
@@ -372,7 +373,7 @@ export default class App extends TElement {
     // モデル作成
     const models = await Promise.all(
       files
-        .filter(file => file.path.endsWith('.ts') || file.path.endsWith('.js') || file.path.endsWith('.mjs'))
+        .filter(file => file.path.endsWith('.ts') || file.path.endsWith('.tsx') || file.path.endsWith('.js') || file.path.endsWith('.mjs'))
         .map(file => this.createEditorModel(file.path, file.file))
     )
     // モデルのパスを解決した状態で表示を更新する
@@ -574,7 +575,7 @@ export default class App extends TElement {
   }
 
   async tsTranspile (path, file, code = null) {
-    if (!path.endsWith('.ts')) return
+    if (!path.endsWith('.ts') && !path.endsWith('.tsx')) return
     if (code == null) code = await file.text()
     const result = this.typescript.transpile(code, tsCompilerOptions)
     return new Blob([result], { type: this.idbFile.getFileType('.js') })
