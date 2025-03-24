@@ -26,22 +26,24 @@ class Main {
       event.waitUntil(async function (main) {
         const urls = [
           base,
-          base + 'dist/8.js',
-          base + 'dist/46.js',
-          base + 'dist/75.js',
-          base + 'dist/134.js',
-          base + 'dist/288.js',
-          base + 'dist/377.js',
-          base + 'dist/401.js',
-          base + 'dist/423.js',
-          base + 'dist/571.js',
-          base + 'dist/712.js',
-          base + 'dist/717.js',
-          base + 'dist/834.js',
-          base + 'dist/871.js',
-          base + 'dist/2fa1fcf53c57a51b064d.ttf',
+          base + 'dist/77.js',
+          base + 'dist/100.js',
+          base + 'dist/180.js',
+          base + 'dist/355.js',
+          base + 'dist/392.js',
+          base + 'dist/394.js',
+          base + 'dist/550.js',
+          base + 'dist/569.js',
+          base + 'dist/614.js',
+          base + 'dist/628.js',
+          base + 'dist/658.js',
+          base + 'dist/745.js',
+          base + 'dist/830.js',
+          base + 'dist/843.js',
+          base + 'dist/958.js',
           base + 'dist/css.worker.js',
           base + 'dist/editor.worker.js',
+          base + 'dist/f6283f7ccaed1249d9eb.ttf',
           base + 'dist/html.worker.js',
           base + 'dist/main.js',
           base + 'dist/ts.worker.js',
@@ -66,18 +68,15 @@ class Main {
     if ((req.url + '/').startsWith(root)) {
       let url = self.decodeURI(req.url).split('?')[0].split('#')[0]
 
-      // 拡張子が無いものを「.ts」とみなす
-      if (url.slice(-1) !== '/' && !url.slice(url.lastIndexOf('/') + 1).includes('.')) {
-        url += '.ts'
-      }
+      let fileData = await this.getFileData(root, url)
 
-      const fileData = await idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
-        idb.cursor({
-          index: tx.objectStore('files').index('path'),
-          range: IDBKeyRange.only(url.slice(root.length) + (url.slice(-1) === '/' ? 'index.html' : '')),
-          forEach: value => value
-        })
-      )
+      if (!fileData) {
+        // ファイルが存在せず、拡張子が無いものを「.ts」とみなして再検索
+        if (url.slice(-1) !== '/' && !url.slice(url.lastIndexOf('/') + 1).includes('.')) {
+          url += '.ts'
+          fileData = await this.getFileData(root, url)
+        }
+      }
 
       let res = null
       let resHeader = null
@@ -93,6 +92,16 @@ class Main {
       const cache = await caches.open(this.namespace)
       return (await cache.match(req)) ?? (await fetch(req))
     }
+  }
+
+  getFileData (root, url) {
+    return idb.tx(this.dbSchema, ['files'], 'readonly', tx =>
+      idb.cursor({
+        index: tx.objectStore('files').index('path'),
+        range: IDBKeyRange.only(url.slice(root.length) + (url.slice(-1) === '/' ? 'index.html' : '')),
+        forEach: value => value
+      })
+    )
   }
 }
 

@@ -23,7 +23,8 @@ const tsCompilerOptions = {
   // sourceMap: true
   allowJs: true,
   checkJs: true,
-  allowImportingTsExtensions: true
+  allowImportingTsExtensions: true,
+  experimentalDecorators: true
 }
 
 // https://github.com/Microsoft/monaco-editor/issues/926
@@ -373,7 +374,7 @@ export default class App extends TElement {
     // モデル作成
     const models = await Promise.all(
       files
-        .filter(file => file.path.endsWith('.ts') || file.path.endsWith('.tsx') || file.path.endsWith('.js') || file.path.endsWith('.mjs'))
+        .filter(file => file.path.endsWith('.ts') || file.path.endsWith('.tsx') || file.path.endsWith('.js') || file.path.endsWith('.jsx') || file.path.endsWith('.cjs') || file.path.endsWith('.mjs'))
         .map(file => this.createEditorModel(file.path, file.file))
     )
     // モデルのパスを解決した状態で表示を更新する
@@ -666,7 +667,7 @@ export default class App extends TElement {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>My App</title>
     <link rel="stylesheet" href="style.css">
-    <script type="module" src="main"></script>
+    <script type="module" src="main.ts"></script>
   </head>
   <body>
   </body>
