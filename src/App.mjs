@@ -1,4 +1,3 @@
-import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import * as styleDef from './assets/styledef.mjs'
 import hold from './assets/hold.mjs'
@@ -537,7 +536,7 @@ export default class App extends TElement {
    * 現在開いているタブをIDBに保存する
    */
   async saveTabs () {
-    this.projectSetting.tabs = [...seq(this.tabs).map(tab => tab.path)]
+    this.projectSetting.tabs = [...this.tabs].map(tab => tab.path)
     this.projectSetting.currentTab = this.tabs.current?.path
     await this.idbFile.putWorkSpaceSetting(this.projectSetting)
   }
@@ -588,7 +587,7 @@ export default class App extends TElement {
 
   handleDrop (event) {
     event.preventDefault()
-    return this.addFile(...seq(event.dataTransfer.files).map(file => {
+    return this.addFile([...event.dataTransfer.files].map(file => {
       const type = this.idbFile.getFileType(file.name) ?? file.type // .tsファイルがブラウザ依存にならないようにする
       return { path: file.name, file: new Blob([file], { type }) }
     }))
@@ -788,7 +787,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       if (!name) return ''
 
       let msg = ''
-      if (seq('\\/:*?"<>|').some(c => name.includes(c))) {
+      if ([...'\\/:*?"<>|'].some(c => name.includes(c))) {
         msg = isFile + 'には次の文字は使えません:\n\\ / : * ? " < > |'
       } else if (name === '.' || name === '..') {
         msg = 'その' + isFile + 'を付けることはできません'
@@ -841,7 +840,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
 
     // ドラッグ対象
     const targetItem =
-      seq(ancestorNodes(event.target))
+      [...ancestorNodes(event.target)]
         .map(elem => TElement.from(elem))
         .find(item => item instanceof FileTree.Item)
     if (!targetItem) return
@@ -958,8 +957,8 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     const updateRects = () => {
       rects = null
       requestAnimationFrame(() => {
-        rects = [...seq(this.tabs).map((tab, idx) => ({ idx, tab, rect: tab.element.getBoundingClientRect() }))]
-        idx = seq(this.tabs).indexOf(this.tabs.current)
+        rects = [...this.tabs].map((tab, idx) => ({ idx, tab, rect: tab.element.getBoundingClientRect() }))
+        idx = [...this.tabs].indexOf(this.tabs.current)
       })
     }
     updateRects()
@@ -1120,9 +1119,9 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
    */
   async run (event) {
     // 実行前に保存
-    await Promise.all(seq(this.tabs).map(tab => this.saveTab(tab)))
+    await Promise.all([...this.tabs].map(tab => this.saveTab(tab)))
 
-    if (seq(this.fileTree).every(item => item.text !== 'index.html')) {
+    if ([...this.fileTree].every(item => item.text !== 'index.html')) {
       await alert('"index.html" が無いため実行できません')
       return
     }

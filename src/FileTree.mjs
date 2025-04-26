@@ -1,4 +1,3 @@
-import seq from '@haiix/seq'
 import style from './assets/style.mjs'
 import TTree from './assets/ui/TTree.mjs'
 
@@ -48,7 +47,7 @@ export default class FileTree extends TTree {
 
   insert (parentFolder, targetItem) {
     const fileName = targetItem.text
-    const ref = seq(parentFolder).find(item => (
+    const ref = [...parentFolder].find(item => (
       targetItem.isExpandable
         ? (!item.isExpandable || item.text > fileName)
         : (!item.isExpandable && item.text > fileName)
@@ -101,7 +100,7 @@ export default class FileTree extends TTree {
   getItem (path) {
     if (!path) return this
     return path.split('/').reduce((item, name) =>
-      seq(item).find(
+      [...item].find(
         cItem => cItem.text === name) ||
         this.insert(item, this.createItem(name, true)
         )

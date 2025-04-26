@@ -20,7 +20,6 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "@haiix/seq": "^0.1.1",
     "@haiix/tcomponent": "^0.2.6",
     "@zip.js/zip.js": "^2.7.57",
     "monaco-editor-webpack-plugin": "^7.1.0",
