@@ -18,41 +18,41 @@ https://haiix.github.io/editor/
 
 1. Node.js と Git をインストール
 
-    各公式ページから最新の安定版をダウンロード、インストールしてください。
+   各公式ページから最新の安定版をダウンロード、インストールしてください。
 
 1. 任意のディレクトリで Git クローン
 
-    ```bash
-    git clone https://github.com/haiix/editor.git
-    ```
+   ```bash
+   git clone https://github.com/haiix/editor.git
+   ```
 
 1. ディレクトリ移動
 
-    ```bash
-    cd editor
-    ```
+   ```bash
+   cd editor
+   ```
 
 1. 必要なモジュールをインストール
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 1. ビルド
 
-    ```bash
-    npx webpack
-    ```
+   ```bash
+   npx webpack
+   ```
 
 1. Webサーバー起動
 
-    ```bash
-    npx http-server -p 3000
-    ```
+   ```bash
+   npx http-server -p 3000
+   ```
 
 1. ブラウザーで開く
 
-    http://localhost:3000/
+   http://localhost:3000/
 
 ## 連絡先
 

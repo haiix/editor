@@ -8,13 +8,19 @@
   "license": "MIT",
   "scripts": {
     "build": "npm run clean && webpack",
-    "test": "standard --fix src",
+    "format": "prettier ./ --write",
+    "lint": "eslint --fix src/**/*.ts",
+    "fix": "npm run lint && npm run format",
     "clean": "rimraf dist"
   },
   "devDependencies": {
+    "@eslint/js": "^9.31.0",
     "css-loader": "^7.1.2",
+    "eslint": "^9.31.0",
+    "eslint-config-prettier": "^10.1.5",
+    "globals": "^16.3.0",
+    "prettier": "3.6.2",
     "rimraf": "^6.0.1",
-    "standard": "^17.1.2",
     "style-loader": "^4.0.0",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
@@ -24,10 +30,5 @@
     "@zip.js/zip.js": "^2.7.57",
     "monaco-editor-webpack-plugin": "^7.1.0",
     "typescript": "^5.8.2"
-  },
-  "standard": {
-    "env": [
-      "browser"
-    ]
   }
 }

@@ -1,4 +1,4 @@
-import style from './assets/style.mjs'
+import style from './assets/style.mjs';
 
 style(`
   @font-face {
@@ -26,4 +26,4 @@ style(`
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'liga';
   }
-`)
+`);

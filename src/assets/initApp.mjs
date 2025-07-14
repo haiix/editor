@@ -1,59 +1,63 @@
-import { nextTabbable } from './focus.mjs'
-import * as styleCtl from './style.mjs'
+import { nextTabbable } from './focus.mjs';
+import * as styleCtl from './style.mjs';
 
-const l = window.location
-const base = l.protocol + '//' + l.host + l.pathname.slice(0, l.pathname.lastIndexOf('/'))
+const l = window.location;
+const base =
+  l.protocol + '//' + l.host + l.pathname.slice(0, l.pathname.lastIndexOf('/'));
 
-styleCtl.lock()
+styleCtl.lock();
 
-export async function initApp (App) {
-  let app = null
+export async function initApp(App) {
+  let app = null;
   try {
-    app = new App()
-    if (!Object.prototype.hasOwnProperty.call(app, 'onerror') && !Object.prototype.hasOwnProperty.call(App.prototype, 'onerror')) {
-      app.onerror = error => {
-        handleError(app, error, true)
-      }
+    app = new App();
+    if (
+      !Object.prototype.hasOwnProperty.call(app, 'onerror') &&
+      !Object.prototype.hasOwnProperty.call(App.prototype, 'onerror')
+    ) {
+      app.onerror = (error) => {
+        handleError(app, error, true);
+      };
     }
     if (app.init) {
-      const retVal = app.init()
-      if (retVal?.then) await retVal
+      const retVal = app.init();
+      if (retVal?.then) await retVal;
     }
-    styleCtl.unlock()
-    document.body.appendChild(app.element)
-    const firstElem = nextTabbable(null, app.element)
-    if (firstElem) firstElem.focus()
-    window.app = app
+    styleCtl.unlock();
+    document.body.appendChild(app.element);
+    const firstElem = nextTabbable(null, app.element);
+    if (firstElem) firstElem.focus();
+    window.app = app;
     if (app.main) {
-      const retVal = await app.main()
-      if (retVal?.then) await retVal
+      const retVal = await app.main();
+      if (retVal?.then) await retVal;
     }
     if (app.loop) {
-      ;(function loop (t) {
+      (function loop(t) {
         try {
-          app.loop(t)
-          window.requestAnimationFrame(loop)
+          app.loop(t);
+          window.requestAnimationFrame(loop);
         } catch (error) {
-          handleError(app, error, false)
+          handleError(app, error, false);
         }
-      }(0))
+      })(0);
     }
   } catch (error) {
-    handleError(app, error, false)
+    handleError(app, error, false);
   }
 }
 
-function handleError (app, error, selfHandle) {
-  styleCtl.unlock()
+function handleError(app, error, selfHandle) {
+  styleCtl.unlock();
   if (!selfHandle && app && app.onerror) {
-    app.onerror(error)
+    app.onerror(error);
   } else {
-    document.body.textContent = ''
-    const pre = document.createElement('pre')
-    pre.textContent = (error.stack ?? error.message).replaceAll(base, '.')
-    document.body.appendChild(pre)
-    throw error
+    document.body.textContent = '';
+    const pre = document.createElement('pre');
+    pre.textContent = (error.stack ?? error.message).replaceAll(base, '.');
+    document.body.appendChild(pre);
+    throw error;
   }
 }
 
-export default initApp
+export default initApp;

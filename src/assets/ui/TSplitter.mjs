@@ -1,8 +1,8 @@
-import TElement from './TElement.mjs'
-import style from '../style.mjs'
-import hold, { getPageCoordinate } from '../hold.mjs'
+import TElement from './TElement.mjs';
+import style from '../style.mjs';
+import hold, { getPageCoordinate } from '../hold.mjs';
 
-const ukey = 't-component-ui-splitter'
+const ukey = 't-component-ui-splitter';
 
 style(`
   .${ukey} {
@@ -27,41 +27,42 @@ style(`
     width: 100%;
     height: 100%;
   }
-`)
+`);
 
 export default class TSplitter extends TElement {
-  template () {
-    this.tagName = 't-splitter'
+  template() {
+    this.tagName = 't-splitter';
     this.attrDef = [
       { name: 'ondrag', type: 'function' },
-      { name: 'position', type: 'string' }
-    ]
+      { name: 'position', type: 'string' },
+    ];
     return `
       <div class="${ukey}" ontouchstart="return this.handleSplitter(event)" onmousedown="return this.handleSplitter(event)"></div>
-    `
+    `;
   }
 
-  handleSplitter (event) {
-    event.preventDefault()
-    let target; let m = 1
+  handleSplitter(event) {
+    event.preventDefault();
+    let target;
+    let m = 1;
     if (this.position === 'right') {
-      target = this.element.nextElementSibling
-      m = -1
+      target = this.element.nextElementSibling;
+      m = -1;
     } else {
-      target = this.element.previousElementSibling
+      target = this.element.previousElementSibling;
     }
-    const [px] = getPageCoordinate(event)
-    const ox = px * m - window.getComputedStyle(target).width.slice(0, -2)
-    this.element.classList.add('holding')
+    const [px] = getPageCoordinate(event);
+    const ox = px * m - window.getComputedStyle(target).width.slice(0, -2);
+    this.element.classList.add('holding');
     hold({
       cursor: window.getComputedStyle(event.target).cursor,
-      ondrag: px => {
-        target.style.width = Math.max(0, px * m - ox) + 'px'
-        if (this.ondrag) this.ondrag()
+      ondrag: (px) => {
+        target.style.width = Math.max(0, px * m - ox) + 'px';
+        if (this.ondrag) this.ondrag();
       },
       ondragend: () => {
-        this.element.classList.remove('holding')
-      }
-    })
+        this.element.classList.remove('holding');
+      },
+    });
   }
 }

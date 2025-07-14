@@ -1,8 +1,8 @@
-import TList from './assets/ui/TList.mjs'
-import style from './assets/style.mjs'
+import TList from './assets/ui/TList.mjs';
+import style from './assets/style.mjs';
 
 export default class EditorTab extends TList.Item {
-  template () {
+  template() {
     style(`
       .editor-tabs {
         border-bottom: 1px solid #999;
@@ -38,50 +38,50 @@ export default class EditorTab extends TList.Item {
       .editor-tabs > li .close-button:hover {
         border: 1px solid #CCC;
       }
-    `)
+    `);
     return `
       <li>
         <span id="label" class="label"></span>
         <span id="closeButton" class="material-icons close-button">close</span>
       </li>
-    `
+    `;
   }
 
-  constructor (attr = {}, nodes = []) {
-    const sattr = Object.assign({}, attr)
-    delete sattr.view
-    delete sattr.path
-    delete sattr.file
-    super(sattr, nodes)
-    this.view = attr.view
-    this.path = attr.path
-    this.file = attr.file
-    this.editor = null
+  constructor(attr = {}, nodes = []) {
+    const sattr = Object.assign({}, attr);
+    delete sattr.view;
+    delete sattr.path;
+    delete sattr.file;
+    super(sattr, nodes);
+    this.view = attr.view;
+    this.path = attr.path;
+    this.file = attr.file;
+    this.editor = null;
   }
 
-  get isModified () {
-    return this.classList.contains('modified')
+  get isModified() {
+    return this.classList.contains('modified');
   }
 
-  set isModified (value) {
+  set isModified(value) {
     if (value) {
-      this.classList.add('modified')
+      this.classList.add('modified');
     } else {
-      this.classList.remove('modified')
+      this.classList.remove('modified');
     }
   }
 
-  get path () {
-    return this.value
+  get path() {
+    return this.value;
   }
 
-  set path (path) {
-    this.value = path
-    this.label.textContent = this.name
-    this.view.value = path
+  set path(path) {
+    this.value = path;
+    this.label.textContent = this.name;
+    this.view.value = path;
   }
 
-  get name () {
-    return this.path.slice(('/' + this.path).lastIndexOf('/'))
+  get name() {
+    return this.path.slice(('/' + this.path).lastIndexOf('/'));
   }
 }

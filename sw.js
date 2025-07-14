@@ -1,1 +1,1 @@
-importScripts('./dist/sw.js')
+importScripts('./dist/sw.js');

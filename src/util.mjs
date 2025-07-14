@@ -1,15 +1,15 @@
-export function sleep (delay) {
-  return new Promise(resolve => window.setTimeout(resolve, delay))
+export function sleep(delay) {
+  return new Promise((resolve) => window.setTimeout(resolve, delay));
 }
 
 /**
  * 対象ノードの親ノードをたどる
  * @param  {HTMLElement}  node - 対象ノード
  */
-export function * ancestorNodes (node) {
+export function* ancestorNodes(node) {
   while (node) {
-    yield node
-    node = node.parentNode
+    yield node;
+    node = node.parentNode;
   }
 }
 
@@ -18,10 +18,10 @@ export function * ancestorNodes (node) {
  * @param  {HTMLElement}  parent - 親ノード
  * @param  {HTMLElement}  target - 対象ノード
  */
-export function getIncludingChild (parent, target) {
-  if (target === parent) return null
+export function getIncludingChild(parent, target) {
+  if (target === parent) return null;
   while (target && target.parentNode !== parent) {
-    target = target.parentNode
+    target = target.parentNode;
   }
-  return target
+  return target;
 }

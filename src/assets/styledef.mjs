@@ -12,7 +12,7 @@ button {
   font-family: inherit;
   font-size: inherit;
 }
-`
+`;
 
 export const fullscreen = `
 .fullscreen {
@@ -24,7 +24,7 @@ export const fullscreen = `
   overflow: auto;
   outline: none;
 }
-`
+`;
 
 export const flex = `
 .flex.row {
@@ -45,4 +45,4 @@ ul.flex.row, ul.flex.column {
 .flex.fit {
   flex: auto;
 }
-`
+`;
