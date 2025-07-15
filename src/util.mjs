@@ -1,5 +1,7 @@
 export function sleep(delay) {
-  return new Promise((resolve) => window.setTimeout(resolve, delay));
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, delay);
+  });
 }
 
 /**
@@ -7,9 +9,10 @@ export function sleep(delay) {
  * @param  {HTMLElement}  node - 対象ノード
  */
 export function* ancestorNodes(node) {
-  while (node) {
-    yield node;
-    node = node.parentNode;
+  let curr = node;
+  while (curr) {
+    yield curr;
+    curr = curr.parentNode;
   }
 }
 
@@ -19,9 +22,10 @@ export function* ancestorNodes(node) {
  * @param  {HTMLElement}  target - 対象ノード
  */
 export function getIncludingChild(parent, target) {
-  if (target === parent) return null;
-  while (target && target.parentNode !== parent) {
-    target = target.parentNode;
+  let curr = target;
+  if (curr === parent) return null;
+  while (curr && curr.parentNode !== parent) {
+    curr = curr.parentNode;
   }
-  return target;
+  return curr;
 }

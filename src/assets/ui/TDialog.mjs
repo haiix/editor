@@ -1,6 +1,6 @@
+import { isTabbable, nextTabbable, previousTabbable } from '../focus.mjs';
 import TElement from './TElement.mjs';
 import style from '../style.mjs';
-import { isTabbable, nextTabbable, previousTabbable } from '../focus.mjs';
 
 const ukey = 't-component-ui-dialog';
 
@@ -57,15 +57,15 @@ style(`
 
 export default class TDialog extends TElement {
   static create(DialogClass) {
-    return async function (...args) {
-      await new Promise((resolve) => window.requestAnimationFrame(resolve)); // keydownイベントが連続実行されるのを防ぐ
+    return async (...args) => {
+      await new Promise((resolve) => {
+        window.requestAnimationFrame(resolve);
+      }); // keydownイベントが連続実行されるのを防ぐ
       const lastFocused = document.activeElement;
       let dialog;
       let tabHandler = null;
       const result = await new Promise((resolve) => {
-        dialog = new DialogClass(
-          Object.assign({ resolve }, { arguments: args }),
-        );
+        dialog = new DialogClass({ resolve, arguments: args });
         document.body.appendChild(dialog.element);
         const firstElem = nextTabbable(null, dialog.element);
         if (firstElem) {
@@ -73,7 +73,7 @@ export default class TDialog extends TElement {
           tabHandler = TElement.createElement(
             '<div style="position: absolute; overflow: hidden; width: 0;"><input onfocus="this.handleFocus(event)" tabindex="1" /></div>',
             {
-              handleFocus(event) {
+              handleFocus() {
                 firstElem.focus();
               },
             },
@@ -103,7 +103,9 @@ export default class TDialog extends TElement {
       document.body.removeChild(dialog.element);
       if (tabHandler) document.body.removeChild(tabHandler);
       lastFocused.focus();
-      await new Promise((resolve) => window.requestAnimationFrame(resolve)); // keydownイベントが連続実行されるのを防ぐ
+      await new Promise((resolve) => {
+        window.requestAnimationFrame(resolve);
+      }); // keydownイベントが連続実行されるのを防ぐ
       return result;
     };
   }
@@ -139,11 +141,11 @@ export default class TDialog extends TElement {
     this.resolve = attr.resolve;
   }
 
-  handleOK(event) {
+  handleOK() {
     this.resolve(null);
   }
 
-  handleCancel(event) {
+  handleCancel() {
     this.resolve(null);
   }
 
@@ -180,6 +182,8 @@ export default class TDialog extends TElement {
           if (elem) elem.focus();
         }
         break;
+      default:
+      // do nothing
     }
   }
 }
@@ -228,11 +232,11 @@ export class Confirm extends TDialog {
     this.text.textContent = text;
   }
 
-  handleOK(event) {
+  handleOK() {
     this.resolve(true);
   }
 
-  handleCancel(event) {
+  handleCancel() {
     this.resolve(false);
   }
 }
@@ -264,22 +268,22 @@ export class Prompt extends TDialog {
     this.input.value = value;
   }
 
-  handleOK(event) {
+  handleOK() {
     this.resolve(this.input.value);
   }
 }
 
 export const prompt = TDialog.create(Prompt);
 
-export async function openFile(accept = '', multiple = false) {
-  return await new Promise((resolve) => {
+export function openFile(accept = '', multiple = false) {
+  return new Promise((resolve) => {
     const input = TElement.createElement(
       `<input type="file" accept="${accept}" ${multiple ? 'multiple' : ''} hidden />`,
     );
-    input.onchange = (event) => {
+    input.onchange = () => {
       resolve(multiple ? input.files : input.files[0]);
     };
-    window.addEventListener('focus', function callee(event) {
+    window.addEventListener('focus', function callee() {
       window.removeEventListener('focus', callee);
       setTimeout(resolve, 1000, null);
     });

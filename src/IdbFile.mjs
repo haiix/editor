@@ -31,8 +31,8 @@ export default class IdbFile {
       const store = tx.objectStore('files');
       for (let i = 1; i <= 4; i++) {
         idb.add(store, {
-          path: 'workspace' + i,
-          label: 'ワークスペース' + i,
+          path: `workspace${i}`,
+          label: `ワークスペース${i}`,
           setting: this.createDefaultSetting(),
         });
       }
@@ -70,16 +70,19 @@ export default class IdbFile {
       idb.cursor({
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.lowerBound(this.workspace),
-        forEach: (fileData) => {
+        forEach: (_fileData) => {
+          let fileData = _fileData;
           if (!fileData.path.startsWith(this.workspace)) return false;
-          fileData = Object.assign({}, fileData, {
+          fileData = {
+            ...fileData,
             path: fileData.path.slice(this.workspace.length),
-          });
+          };
           if (fileData.file) {
             files.push(fileData);
           } else {
             folders.push(fileData);
           }
+          return null;
         },
       }),
     );
@@ -98,10 +101,11 @@ export default class IdbFile {
         range: IDBKeyRange.lowerBound(this.workspace),
         forEach: (fileData) => {
           if (!fileData.path.startsWith(this.workspace)) return false;
-          fileData = Object.assign({}, fileData, {
+          inputFiles.push({
+            ...fileData,
             path: fileData.path.slice(this.workspace.length),
           });
-          inputFiles.push(fileData);
+          return null;
         },
       }),
     );
@@ -116,10 +120,7 @@ export default class IdbFile {
     await idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) => {
       const store = tx.objectStore('files');
       for (const fileData of fileDataList) {
-        const _fileData = Object.assign({}, fileData, {
-          path: this.workspace + fileData.path,
-        });
-        idb.put(store, _fileData);
+        idb.put(store, { ...fileData, path: this.workspace + fileData.path });
       }
     });
   }
@@ -136,11 +137,11 @@ export default class IdbFile {
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.lowerBound(this.workspace + path),
         forEach: (fileData, cursor) => {
-          if (!(fileData.path + '/').startsWith(this.workspace + path + '/'))
+          if (!`${fileData.path}/`.startsWith(`${this.workspace}${path}/`))
             return false;
-          // console.log('rm ' + fileData.path)
           cursor.delete(fileData);
           removedPaths.push(fileData.path.slice(this.workspace.length));
+          return null;
         },
       }),
     );
@@ -158,6 +159,7 @@ export default class IdbFile {
         forEach: (fileData, cursor) => {
           if (!fileData.path.startsWith(this.workspace)) return false;
           cursor.delete();
+          return null;
         },
       }),
     );
@@ -176,7 +178,7 @@ export default class IdbFile {
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.lowerBound(this.workspace + oldPath),
         forEach: (fileData, cursor) => {
-          if (!(fileData.path + '/').startsWith(this.workspace + oldPath + '/'))
+          if (!`${fileData.path}/`.startsWith(`${this.workspace}${oldPath}/`))
             return false;
           const _prev = fileData.path;
           const _new =
@@ -201,6 +203,8 @@ export default class IdbFile {
             _prev.slice(this.workspace.length),
             _new.slice(this.workspace.length),
           ]);
+
+          return true;
         },
       }),
     );
@@ -213,8 +217,8 @@ export default class IdbFile {
    * @param file
    */
   putFile(path, file, distFile = null) {
-    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) => {
-      return idb.cursor({
+    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
+      idb.cursor({
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.only(this.workspace + path),
         forEach(value, cursor) {
@@ -222,8 +226,8 @@ export default class IdbFile {
           value.distFile = distFile;
           cursor.update(value);
         },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -243,16 +247,16 @@ export default class IdbFile {
    * @param setting
    */
   putWorkSpaceSetting(setting) {
-    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) => {
-      return idb.cursor({
+    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
+      idb.cursor({
         index: tx.objectStore('files').index('path'),
         range: IDBKeyRange.only(this.workspace.slice(0, -1)),
         forEach(value, cursor) {
           value.setting = setting;
           cursor.update(value);
         },
-      });
-    });
+      }),
+    );
   }
 
   /**
@@ -274,12 +278,13 @@ export default class IdbFile {
    * @return setting
    */
   createDefaultSetting(setting) {
-    setting ??= {};
-    setting.fileName ??= '';
-    setting.password ??= '';
-    setting.tabs ??= [];
-    setting.currentTab ??= null;
-    return setting;
+    return {
+      fileName: '',
+      password: '',
+      tabs: [],
+      currentTab: null,
+      ...setting,
+    };
   }
 
   /**

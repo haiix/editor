@@ -2,6 +2,7 @@ import TElement from './TElement.mjs';
 
 function createItem(elem) {
   if (elem.element || elem.tagName === 'LI') return elem;
+  // eslint-disable-next-line no-use-before-define
   return new TListItem({}, [elem]);
 }
 

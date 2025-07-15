@@ -1,6 +1,6 @@
+import hold, { getPageCoordinate } from '../hold.mjs';
 import TElement from './TElement.mjs';
 import style from '../style.mjs';
-import hold, { getPageCoordinate } from '../hold.mjs';
 
 const ukey = 't-component-ui-splitter';
 
@@ -56,8 +56,8 @@ export default class TSplitter extends TElement {
     this.element.classList.add('holding');
     hold({
       cursor: window.getComputedStyle(event.target).cursor,
-      ondrag: (px) => {
-        target.style.width = Math.max(0, px * m - ox) + 'px';
+      ondrag: (cpx) => {
+        target.style.width = `${Math.max(0, cpx * m - ox)}px`;
         if (this.ondrag) this.ondrag();
       },
       ondragend: () => {

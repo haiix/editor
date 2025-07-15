@@ -1,13 +1,13 @@
 import TComponent from '@haiix/tcomponent';
 
 export function getAttrString(attr, name, defaultValue = '') {
-  return (attr[name] ?? defaultValue) + '';
+  return attr[name] ?? defaultValue;
 }
 
 export function getAttrBoolean(attr, name, defaultValue = false) {
-  return attr[name] != null
-    ? attr[name] === name || attr[name] === true
-    : defaultValue;
+  return attr[name] == null
+    ? defaultValue
+    : attr[name] === name || attr[name] === true;
 }
 
 export function getAttrFunction(attr, name) {
@@ -27,7 +27,7 @@ export function initAttrs(telem, attr, vals = []) {
         telem[val.name] = getAttrFunction(attr, val.name);
         break;
       default:
-        throw new Error('Undefied type: ' + val.type);
+        throw new Error(`Undefied type: ${val.type}`);
     }
   }
   for (const [name, value] of Object.entries(attr)) {
@@ -75,7 +75,7 @@ export default class TElement extends TComponent {
       if (forElem.tagName === 'LABEL' && forElem.getAttribute('for') === name) {
         const idElem = TElement.from(this[name]) ?? this[name];
         if (idElem instanceof window.HTMLElement) {
-          const ukey = name + '_' + Math.random().toString(36).slice(2);
+          const ukey = `${name}_${Math.random().toString(36).slice(2)}`;
           idElem.setAttribute('id', ukey);
           forElem.setAttribute('for', ukey);
         }
@@ -83,7 +83,7 @@ export default class TElement extends TComponent {
     }
 
     initAttrs(this, attr, this.attrDef);
-    this.client = this.client ?? this.element;
+    this.client ??= this.element;
     for (const node of nodes) {
       this.appendChild(node);
     }
@@ -182,7 +182,7 @@ export default class TElement extends TComponent {
 
   dispatchEvent(event) {
     const retVal = this.element.dispatchEvent(event);
-    const fn = 'on' + event.type;
+    const fn = `on${event.type}`;
     if (typeof this[fn] === 'function') this[fn](event);
     return retVal;
   }

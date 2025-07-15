@@ -1,5 +1,5 @@
-import style from './assets/style.mjs';
 import TTree from './assets/ui/TTree.mjs';
+import style from './assets/style.mjs';
 
 const ukey = 'my-file-tree';
 
@@ -114,9 +114,10 @@ export default class FileTree extends TTree {
    */
   getPath(current = this.current) {
     const path = [];
-    while (current !== this) {
-      path.unshift(current.text);
-      current = current.parentNode;
+    let currPath = current;
+    while (currPath !== this) {
+      path.unshift(currPath.text);
+      currPath = currPath.parentNode;
     }
     return path.join('/');
   }
@@ -127,9 +128,10 @@ export default class FileTree extends TTree {
    */
   getFolderPath(item = this.current) {
     if (!item) return '';
-    if (item.isExpandable === false) item = item.parentNode;
-    let path = this.getPath(item);
-    if (path !== '') path = path + '/';
+    let curr = item;
+    if (curr.isExpandable === false) curr = curr.parentNode;
+    let path = this.getPath(curr);
+    if (path !== '') path += '/';
     return path;
   }
 

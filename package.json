@@ -9,7 +9,7 @@
   "scripts": {
     "build": "npm run clean && webpack",
     "format": "prettier ./ --write",
-    "lint": "eslint --fix src/**/*.ts",
+    "lint": "eslint --fix src/**/*.mjs",
     "fix": "npm run lint && npm run format",
     "clean": "rimraf dist"
   },

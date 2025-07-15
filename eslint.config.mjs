@@ -1,18 +1,74 @@
-import js from '@eslint/js';
-import globals from 'globals';
 import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import globals from 'globals';
+import js from '@eslint/js';
 
 export default defineConfig([
   { ignores: ['dist/**', 'eslint.config.js'] },
   {
     files: ['**/*.{js,mjs,cjs}'],
     plugins: { js },
-    extends: ['js/recommended'],
+    extends: ['js/all'],
   },
   {
     files: ['**/*.{js,mjs,cjs}'],
     languageOptions: { globals: globals.browser },
+  },
+  {
+    // See: https://eslint.org/docs/latest/rules/
+    rules: {
+      'capitalized-comments': 'off',
+      'class-methods-use-this': 'off',
+      eqeqeq: ['error', 'smart'],
+      'func-style': [
+        'error',
+        'declaration',
+        {
+          allowArrowFunctions: true,
+        },
+      ],
+      //"id-length": ["warn", { properties: "never" }],
+      'id-length': 'off',
+      'init-declarations': 'off', // Conflicts with no-useless-assignment
+      'max-classes-per-file': 'off',
+      'max-lines': 'off',
+      'max-params': ['error', 5],
+      //'max-statements': ['error', 30],
+
+      'no-underscore-dangle': 'off', // Temporarily disabled
+      'max-lines-per-function': 'off', // Temporarily disabled
+      'max-statements': 'off', // Temporarily disabled
+      complexity: 'off', // Temporarily disabled
+
+      'no-await-in-loop': 'warn',
+      'no-bitwise': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-continue': 'off',
+      'no-eq-null': 'off', // Conflicts with eqeqeq:smart
+      'no-inline-comments': 'off',
+      //"no-magic-numbers": ["warn", { ignore: [0, 1] }],
+      'no-magic-numbers': 'off',
+      'no-plusplus': [
+        'warn',
+        {
+          allowForLoopAfterthoughts: true,
+        },
+      ],
+      'no-shadow': [
+        'error',
+        {
+          ignoreOnInitialization: true,
+        },
+      ],
+      'no-ternary': 'off', // no-nested-ternary is still enabled
+      'no-warning-comments': 'warn',
+      'one-var': ['error', 'never'],
+      'prefer-destructuring': 'off',
+      'prefer-named-capture-group': 'off',
+      radix: ['error', 'as-needed'],
+      'sort-keys': 'off',
+      'sort-vars': 'off',
+    },
   },
   eslintConfigPrettier,
 ]);

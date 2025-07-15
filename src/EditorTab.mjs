@@ -48,7 +48,7 @@ export default class EditorTab extends TList.Item {
   }
 
   constructor(attr = {}, nodes = []) {
-    const sattr = Object.assign({}, attr);
+    const sattr = { ...attr };
     delete sattr.view;
     delete sattr.path;
     delete sattr.file;
@@ -82,6 +82,6 @@ export default class EditorTab extends TList.Item {
   }
 
   get name() {
-    return this.path.slice(('/' + this.path).lastIndexOf('/'));
+    return this.path.slice(`/${this.path}`.lastIndexOf('/'));
   }
 }

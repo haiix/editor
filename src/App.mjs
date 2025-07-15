@@ -1,16 +1,16 @@
-import style from './assets/style.mjs';
+import './MaterialIcons.mjs';
 import * as styleDef from './assets/styledef.mjs';
-import hold from './assets/hold.mjs';
+import TDialog, { alert, confirm, prompt } from './assets/ui/TDialog.mjs';
+import { ancestorNodes, getIncludingChild, sleep } from './util.mjs';
+import EditorTab from './EditorTab.mjs';
+import FileTree from './FileTree.mjs';
+import IdbFile from './IdbFile.mjs';
 import TElement from './assets/ui/TElement.mjs';
 import TList from './assets/ui/TList.mjs';
 import TSplitter from './assets/ui/TSplitter.mjs';
-import TDialog, { alert, confirm, prompt } from './assets/ui/TDialog.mjs';
-import './MaterialIcons.mjs';
 import { createContextMenu } from './menu.mjs';
-import IdbFile from './IdbFile.mjs';
-import FileTree from './FileTree.mjs';
-import EditorTab from './EditorTab.mjs';
-import { ancestorNodes, getIncludingChild, sleep } from './util.mjs';
+import hold from './assets/hold.mjs';
+import style from './assets/style.mjs';
 
 const tsCompilerOptions = {
   module: 99, // monaco.languages.typescript.ModuleKind.ESNext
@@ -254,7 +254,7 @@ export default class App extends TElement {
     `;
   }
 
-  constructor(attr = {}, nodes = []) {
+  constructor() {
     super();
     this.name = document.title;
     this.version = '0.1.0';
@@ -263,12 +263,7 @@ export default class App extends TElement {
       1,
       location.pathname.lastIndexOf('/'),
     );
-    this.base =
-      location.protocol +
-      '//' +
-      location.host +
-      '/' +
-      (this.namespace === '' ? '' : this.namespace + '/');
+    this.base = `${location.protocol}//${location.host}/${this.namespace === '' ? '' : `${this.namespace}/`}`;
     this.idbFile = new IdbFile(this.namespace);
 
     this.projectSetting = null;
@@ -302,7 +297,7 @@ export default class App extends TElement {
       const workspaces = await this.idbFile.getAllWorkSpaces();
       if (
         workspaces.find(
-          (workspace) => workspace.path + '/' === lastWorkSpace,
+          (workspace) => `${workspace.path}/` === lastWorkSpace,
         ) != null
       ) {
         this.idbFile.workspace = lastWorkSpace;
@@ -341,7 +336,7 @@ export default class App extends TElement {
     }
   }
 
-  handleClose(event) {
+  handleClose() {
     window.localStorage.setItem('lastWorkSpace', this.idbFile.workspace);
     if (this.debugWindow && !this.debugWindow.closed) {
       this.debugWindow.close();
@@ -415,15 +410,15 @@ export default class App extends TElement {
 
     const removedPaths = await this.idbFile.removeFile(path);
 
-    for (const path of removedPaths) {
+    for (const removedPath of removedPaths) {
       // Monaco Editorのモデルを破棄する
-      if (this.editorModels[path]) {
-        this.editorModels[path].dispose();
-        delete this.editorModels[path];
+      if (this.editorModels[removedPath]) {
+        this.editorModels[removedPath].dispose();
+        delete this.editorModels[removedPath];
       }
 
       // タブが開いている場合は閉じる
-      const tab = this.tabs.get(path);
+      const tab = this.tabs.get(removedPath);
       if (tab) await this.closeTabs([tab]);
     }
 
@@ -500,7 +495,7 @@ export default class App extends TElement {
       minimap: { enabled: false },
       language: tab.file.type.includes('javascript') ? 'javascript' : null,
     });
-    tab.editor.getModel().onDidChangeContent((event) => {
+    tab.editor.getModel().onDidChangeContent(() => {
       // console.log('editor onchange')
       if (model !== this.refreshingMonacoView) {
         if (this.tabs.current) this.tabs.current.isModified = true;
@@ -508,22 +503,22 @@ export default class App extends TElement {
     });
   }
 
-  createEditorModel(path, file) {
+  async createEditorModel(path, file) {
     if (!this.editorModels[path]) {
-      this.editorModels[path] = async function () {
+      this.editorModels[path] = await (async () => {
         const model = this.monaco.editor.createModel(
           await file.text(),
           file.type.includes('typescript') || file.type.includes('javascript')
             ? 'typescript'
             : file.type,
           this.monaco.Uri.parse(
-            this.base + 'debug/' + this.idbFile.workspace + path,
+            `${this.base}debug/${this.idbFile.workspace}${path}`,
           ),
         );
         model.updateOptions({ tabSize: 2 });
         this.editorModels[path] = model;
         return model;
-      }.call(this);
+      })();
     }
     return this.editorModels[path];
   }
@@ -610,9 +605,10 @@ export default class App extends TElement {
   }
 
   async tsTranspile(path, file, code = null) {
-    if (!path.endsWith('.ts') && !path.endsWith('.tsx')) return;
-    if (code == null) code = await file.text();
-    const result = this.typescript.transpile(code, tsCompilerOptions);
+    if (!path.endsWith('.ts') && !path.endsWith('.tsx')) return null;
+    let textCode = code;
+    if (textCode == null) textCode = await file.text();
+    const result = this.typescript.transpile(textCode, tsCompilerOptions);
     return new Blob([result], { type: this.idbFile.getFileType('.js') });
   }
 
@@ -642,10 +638,13 @@ export default class App extends TElement {
       case 116: // F5
         event.preventDefault();
         return this.run(event);
+      default:
+      // do nothing
     }
+    return null;
   }
 
-  async handleSelectTemplate(event) {
+  async handleSelectTemplate() {
     const result = await TDialog.create(
       class extends TDialog {
         titleTemplate() {
@@ -747,6 +746,8 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         await this.openTab('style.css', false);
         await this.openTab('main.ts');
         break;
+      default:
+        throw new Error(`Undefined id: ${id}`);
     }
   }
 
@@ -759,12 +760,14 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         return this.command('delete');
       case 113: // F2
         return this.command('rename');
+      default:
+        return null;
     }
   }
 
   handleFileTreeDoubleClick(event) {
-    if (event.target.classList.contains('expand-icon')) return; // ツリーの展開アイコン
-    if (!this.fileTree.currentIsFile) return;
+    if (event.target.classList.contains('expand-icon')) return null; // ツリーの展開アイコン
+    if (!this.fileTree.currentIsFile) return null;
     return this.openTab(this.fileTree.getPath());
   }
 
@@ -798,7 +801,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
             name,
             `新規${typeName}`,
           );
-          if (!name) return;
+          if (!name) return null;
           const type = this.idbFile.getFileType(name);
           const path = this.fileTree.getFolderPath() + name;
           const fileData =
@@ -808,7 +811,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
           try {
             await this.addFile(fileData);
             this.fileTree.focus();
-            return;
+            return null;
           } catch (error) {
             if (error.name === 'ConstraintError') {
               await alert(
@@ -829,7 +832,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
           oldName,
           '名前の変更',
         );
-        if (!newName) return;
+        if (!newName) return null;
 
         let path = this.fileTree.getPath(this.fileTree.current.parentNode);
         if (path !== '') path += '/';
@@ -838,45 +841,41 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       case 'delete': {
         if (
           !(await confirm(
-            (this.fileTree.currentIsFile ? 'ファイル' : 'フォルダー') +
-              ' "' +
-              this.fileTree.current.text +
-              '" を削除しますか?',
+            `${this.fileTree.currentIsFile ? 'ファイル' : 'フォルダー'} "${this.fileTree.current.text}" を削除しますか?'`,
           ))
         )
           break;
         return this.deleteCurrentFileOrFolder();
       }
       case 'open':
-        if (!this.fileTree.currentIsFile) return;
+        if (!this.fileTree.currentIsFile) return null;
         return this.openTab(this.fileTree.getPath());
       default:
-        throw new Error('Undefiend command: ' + command);
+        throw new Error(`Undefiend command: ${command}`);
     }
+    return null;
   }
 
   /**
    * ファイル名入力チェック
    */
   async inputFileName(isFile, defaultName, title) {
+    let fileName = defaultName;
     do {
-      const name = await prompt(
-        isFile + 'を入力してください',
-        defaultName,
-        title,
-      );
+      const name = await prompt(`${isFile}を入力してください`, fileName, title);
       if (!name) return '';
 
       let msg = '';
       if ([...'\\/:*?"<>|'].some((c) => name.includes(c))) {
-        msg = isFile + 'には次の文字は使えません:\n\\ / : * ? " < > |';
+        msg = `${isFile}には次の文字は使えません:\n\\ / : * ? " < > |`;
       } else if (name === '.' || name === '..') {
-        msg = 'その' + isFile + 'を付けることはできません';
+        msg = `その${isFile}を付けることはできません`;
       }
       if (!msg) return name;
 
       await alert(msg, '注意');
-      defaultName = name;
+      fileName = name;
+      // eslint-disable-next-line no-constant-condition
     } while (true);
   }
 
@@ -886,7 +885,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
   async fileListMove(oldPath, newPath) {
     if (oldPath === newPath) return;
 
-    if ((newPath + '/').startsWith(oldPath + '/')) {
+    if (`${newPath}/`.startsWith(`${oldPath}/`)) {
       await alert(
         '受け側のフォルダーは、送り側フォルダーのサブフォルダーです。',
         '中断',
@@ -928,7 +927,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     this.fileTree.move(oldPath, newPath);
   }
 
-  async handleFileTreeMouseDown(event) {
+  handleFileTreeMouseDown(event) {
     if (event.button === 1) return;
 
     // ドラッグ対象
@@ -980,8 +979,8 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       },
       ondrag: (px, py) => {
         // 半透明アイコンマウスをカーソルの中心に移動
-        shadowElem.style.top = py - shadowElem.clientWidth / 2 + 'px';
-        shadowElem.style.left = px - shadowElem.clientHeight / 2 + 'px';
+        shadowElem.style.top = `${py - shadowElem.clientWidth / 2}px`;
+        shadowElem.style.left = `${px - shadowElem.clientHeight / 2}px`;
 
         // ドロップ対象更新
         const newDropRect = dropRects.find(
@@ -996,20 +995,20 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         dropRect = newDropRect;
         if (dropRect) dropRect.elem.classList.add('drop-target');
       },
-      ondragend: (px, py) => {
+      ondragend: () => {
         if (dropRect) {
           dropRect.elem.classList.remove('drop-target');
 
           // エディターへのドロップ
           if (dropRect.elem === this.mainArea.element) {
-            if (!this.fileTree.currentIsFile) return;
+            if (!this.fileTree.currentIsFile) return null;
             return this.openTab(this.fileTree.getPath());
           }
 
           this.fileTree.focus();
 
           // ドロップ元とドロップ先が同じ場合は何もしない
-          if (dropRect.item === targetItem) return;
+          if (dropRect.item === targetItem) return null;
 
           // ファイル・フォルダ移動
           const oldName = this.fileTree.getPath(targetItem);
@@ -1017,6 +1016,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
             this.fileTree.getFolderPath(dropRect.item) + targetItem.text;
           return this.fileListMove(oldName, newName);
         }
+        return null;
       },
       onerror: (error) => {
         this.onerror(error);
@@ -1059,12 +1059,12 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     this.refreshingMonacoView = null;
   }
 
-  async handleTabChange(event) {
+  handleTabChange() {
     const tab = this.tabs.current;
     if (tab) {
       this.views.value = tab.path;
       this.refreshMonacoView(this.editorModels[tab.path]);
-      document.title = tab.path + ' - ' + this.name;
+      document.title = `${tab.path} - ${this.name}`;
       if (!tab.editor) return; // Editor以外 (画像等)
       requestAnimationFrame(() => {
         this.resizeEditor();
@@ -1084,12 +1084,14 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       return;
     }
     // タブの入れ替え
-    let rects, idx, currTab;
+    let rects;
+    let idx;
+    let currTab;
     const updateRects = () => {
       rects = null;
       requestAnimationFrame(() => {
-        rects = [...this.tabs].map((tab, idx) => ({
-          idx,
+        rects = [...this.tabs].map((tab, _idx) => ({
+          idx: _idx,
           tab,
           rect: tab.element.getBoundingClientRect(),
         }));
@@ -1133,31 +1135,34 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
   }
 
   handleMenuMouseDown(event) {
-    if (event.button !== 0) return;
+    if (event.button !== 0) return null;
     const target = getIncludingChild(this.menubar, event.target);
-    if (!target) return;
+    if (!target) return null;
     const command = target.dataset.key;
     switch (command) {
       case 'workspace':
         return this.showWorkSpaceList(event);
       case 'project':
         return this.showProjectMenu(event);
+      default:
+      // do nothing
     }
+    return null;
   }
 
-  async handleMenuClick(event) {
+  handleMenuClick(event) {
     const target = getIncludingChild(this.menubar, event.target);
-    if (!target) return;
+    if (!target) return null;
     const command = target.dataset.key;
-    if (command == null) return;
+    if (command == null) return null;
     switch (command) {
       case 'workspace':
       case 'project':
-        return;
+        return null;
       case 'run':
         return this.run(event);
       default:
-        throw new Error('Undefiend command: ' + command);
+        throw new Error(`Undefiend command: ${command}`);
     }
   }
 
@@ -1180,7 +1185,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       ${workspaces
         .map((data, idx) => {
           const icon =
-            data.path + '/' === this.idbFile.workspace ? 'check' : '_';
+            `${data.path}/` === this.idbFile.workspace ? 'check' : '_';
           let label = '(無題)';
           if (data.setting?.fileName) {
             let fileName = data.setting.fileName;
@@ -1198,7 +1203,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     event.target.classList.remove('selected');
 
     if (!workspace) return;
-    if (this.idbFile.workspace === workspace.path + '/') return;
+    if (this.idbFile.workspace === `${workspace.path}/`) return;
 
     // 現在のプロジェクトを閉じる
     if (this.tabs.childElementCount > 0) {
@@ -1209,7 +1214,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
 
     // 読み込み
     this.projectSetting = workspace.setting;
-    this.idbFile.workspace = workspace.path + '/';
+    this.idbFile.workspace = `${workspace.path}/`;
     await this.refreshFileTreeAndCreateModels();
     await this.restoreTabs();
   }
@@ -1226,7 +1231,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
    * @param  event  マウスイベント
    */
   async showProjectMenu(event) {
-    if (event.target.classList.contains('selected')) return;
+    if (event.target.classList.contains('selected')) return null;
     event.target.classList.add('selected');
 
     const value = await createContextMenu(`
@@ -1244,7 +1249,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
             '現在のプロジェクトを閉じますか?\n(保存していないデータは失われます)',
           ))
         ) {
-          return;
+          return null;
         }
         return this.newProject();
       case 'loadProject':
@@ -1253,12 +1258,15 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
             '現在のプロジェクトを閉じて、別のプロジェクトを開きますか?\n(保存していないデータは失われます)',
           ))
         ) {
-          return;
+          return null;
         }
         return this.loadProject();
       case 'saveProject':
         return this.saveProject();
+      default:
+      // do nothing
     }
+    return null;
   }
 
   async waitServiceWorkerActivated() {
@@ -1285,7 +1293,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
 
     if (event.ctrlKey) {
       // Ctrlキーを押している場合は別タブで開く
-      window.open(this.base + 'debug/' + this.idbFile.workspace);
+      window.open(`${this.base}debug/${this.idbFile.workspace}`);
     } else {
       this.handlePreviewRefresh(event);
     }
@@ -1305,19 +1313,20 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
   /**
    * プレビューエリアを再読み込み
    */
-  handlePreviewRefresh(event) {
+  handlePreviewRefresh() {
+    // eslint-disable-next-line no-console
     console.clear();
     if (this.previewArea.style.width === '0px') {
       this.previewArea.style.width = '300px';
       this.resizeEditor();
     }
-    this.previewFrame.src = this.base + 'debug/' + this.idbFile.workspace;
+    this.previewFrame.src = `${this.base}debug/${this.idbFile.workspace}`;
   }
 
   /**
    * プレビューエリアを閉じる
    */
-  handlePreviewClose(event) {
+  handlePreviewClose() {
     this.previewFrame.src = 'about:blank';
     if (this.previewArea.style.width !== '0px') {
       this.previewArea.style.width = '0px';
@@ -1338,11 +1347,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
   async saveProject() {
     const EZip = await this.fetchEZip();
     const ezip = new EZip(this.projectSetting);
-    const result = await ezip.save(
-      async function () {
-        return this.idbFile.getAllFiles();
-      }.bind(this),
-    );
+    const result = await ezip.save(() => this.idbFile.getAllFiles());
     if (result) {
       await this.idbFile.putWorkSpaceSetting(this.projectSetting);
     }

@@ -1,5 +1,5 @@
-import TElement from './assets/ui/TElement.mjs';
 import TDialog from './assets/ui/TDialog.mjs';
+import TElement from './assets/ui/TElement.mjs';
 import style from './assets/style.mjs';
 
 const ukey = 'my-flie-list-context-menu';
@@ -56,7 +56,7 @@ class ContextMenu extends TElement {
     `;
   }
 
-  constructor(attr = {}, nodes = []) {
+  constructor(attr = {}) {
     super();
     this._resolve = attr.resolve;
     const [a1] = attr.arguments;
@@ -72,16 +72,16 @@ class ContextMenu extends TElement {
       py = rect.bottom;
     }
 
-    this.element.style.top = py + 'px';
-    this.element.style.left = px + 'px';
+    this.element.style.top = `${py}px`;
+    this.element.style.left = `${px}px`;
+
+    const handleBlur = () => {
+      this.resolve(null);
+    };
 
     const handleMouseDown = (event) => {
       if (this.element.contains(event.target)) return;
       handleBlur(event);
-    };
-
-    const handleBlur = (event) => {
-      this.resolve(null);
     };
 
     const handleMouseMove = (event) => {
@@ -140,6 +140,8 @@ class ContextMenu extends TElement {
             }
           }
           break;
+        default:
+        // do nothing
       }
     };
 
@@ -178,7 +180,7 @@ class ContextMenu extends TElement {
     }
   }
 
-  handleMouseLeave(event) {
+  handleMouseLeave() {
     const curr = this.current;
     if (curr) curr.classList.remove('current');
   }

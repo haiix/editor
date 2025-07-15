@@ -9,13 +9,13 @@ function call(bind, callback, args, onerror) {
     }
   }
   if (!onerror || retVal == null || typeof retVal.then !== 'function') return;
-  (async function (retVal) {
+  (async () => {
     try {
       await retVal;
     } catch (error) {
       onerror.call(bind, error);
     }
-  })(retVal);
+  })();
 }
 
 export function getPageCoordinate(event) {

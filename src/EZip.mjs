@@ -1,5 +1,5 @@
-import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js';
-import TDialog, { openFile, Prompt } from './assets/ui/TDialog.mjs';
+import { BlobReader, BlobWriter, ZipReader, ZipWriter } from '@zip.js/zip.js';
+import TDialog, { Prompt, openFile } from './assets/ui/TDialog.mjs';
 import style from './assets/style.mjs';
 
 const EXT = '.zip';
@@ -74,7 +74,7 @@ const saveDialog = TDialog.create(
     `;
     }
 
-    handleOK(event) {
+    handleOK() {
       this.resolve(
         Array.from(this.form.elements).reduce((obj, elem) => {
           obj[elem.name] = elem.value;
@@ -163,15 +163,15 @@ export default class EZip {
     return await blobWriter.getData();
   }
 
-  async downloadFile(name, blob) {
+  downloadFile(name, blob) {
     const url = URL.createObjectURL(blob);
     TDialog.createElement(`<a href="${url}" download="${name}"></a>`).click();
     URL.revokeObjectURL(url);
   }
 
-  async load(event) {
+  async load() {
     const zipFile = await openFile(EXT);
-    if (!zipFile) return;
+    if (!zipFile) return null;
 
     this.setting.fileName = zipFile.name;
 
@@ -185,7 +185,7 @@ export default class EZip {
         ? await this.readZip(files[0].file)
         : files;
     } catch (error) {
-      throw new Error('ファイルを開けません:\n' + error.message);
+      throw new Error(`ファイルを開けません:\n${error.message}`);
     }
   }
 
@@ -209,42 +209,39 @@ export default class EZip {
       if (prefix === '') {
         if (i < 0) break;
         prefix = entry.filename.slice(0, i + 1);
-      } else {
-        if (i < 0 || entry.filename.slice(0, i + 1) !== prefix) {
-          prefix = '';
-          break;
-        }
+      } else if (i < 0 || entry.filename.slice(0, i + 1) !== prefix) {
+        prefix = '';
+        break;
       }
     }
 
     return await Promise.all(
       entries
         .filter((entry) => !entry.directory && entry.filename !== prefix)
-        .map(
-          async function (entry) {
-            if (!options.password && entry.encrypted) {
-              const password =
-                await passwordPrompt('パスワードを入力してください。');
-              if (password == null) return;
-              options.password = password;
-              this.setting.password = password;
-            }
+        .map(async (entry) => {
+          const entryOptions = { ...options };
+          if (!entryOptions.password && entry.encrypted) {
+            const password =
+              await passwordPrompt('パスワードを入力してください。');
+            if (password == null) return null;
+            entryOptions.password ||= password;
+            this.setting.password = password;
+          }
 
-            const path = (
-              entry.filename.slice(-1) === '/'
-                ? entry.filename.slice(0, -1)
-                : entry.filename
-            ).slice(prefix.length);
+          const path = (
+            entry.filename.slice(-1) === '/'
+              ? entry.filename.slice(0, -1)
+              : entry.filename
+          ).slice(prefix.length);
 
-            const file = entry.directory
-              ? null
-              : await entry.getData(
-                  new BlobWriter(this.getMimeFromExt(entry.filename)),
-                  options,
-                );
-            return { path, file };
-          }.bind(this),
-        ),
+          const file = entry.directory
+            ? null
+            : await entry.getData(
+                new BlobWriter(this.getMimeFromExt(entry.filename)),
+                entryOptions,
+              );
+          return { path, file };
+        }),
     );
   }
 

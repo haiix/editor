@@ -88,13 +88,14 @@ class TTreeBase extends TElement {
   }
 
   insertBefore(item, ref = null) {
-    item = TElement.from(item) ?? item;
-    if (!(item instanceof TTreeItem))
+    const citem = TElement.from(item) ?? item;
+    // eslint-disable-next-line no-use-before-define
+    if (!(citem instanceof TTreeItem))
       throw new Error('The object is not a tree item.');
-    super.insertBefore(item, ref);
+    super.insertBefore(citem, ref);
     const indent = this._getIndent();
-    if (!Number.isNaN(indent)) item._setIndent(indent + 1);
-    return item;
+    if (!Number.isNaN(indent)) citem._setIndent(indent + 1);
+    return citem;
   }
 
   removeChild(item) {
@@ -105,6 +106,7 @@ class TTreeBase extends TElement {
       tree.current =
         item.nextSibling ??
         item.previousSibling ??
+        // eslint-disable-next-line no-use-before-define
         (this instanceof TTreeItem ? this : null);
     }
     super.removeChild(item);
@@ -225,15 +227,18 @@ class TTreeItem extends TTreeBase {
   }
 
   getRootNode() {
+    // eslint-disable-next-line consistent-this
     let curr = this;
     while (curr instanceof TTreeItem) {
       curr = curr.parentNode;
     }
+    // eslint-disable-next-line no-use-before-define
     return curr instanceof TTree ? curr : null;
   }
 
   getPath() {
     const path = [];
+    // eslint-disable-next-line consistent-this
     let curr = this;
     while (curr instanceof TTreeItem) {
       path.unshift(curr);
@@ -243,14 +248,14 @@ class TTreeItem extends TTreeBase {
   }
 
   _setIndent(v) {
-    this._container.style.paddingLeft = v + 'em';
+    this._container.style.paddingLeft = `${v}em`;
     for (const item of this) item._setIndent(v + 1);
   }
 
   _getIndent() {
     const paddingLeft = this._container.style.paddingLeft;
     if (paddingLeft === '') return NaN;
-    return paddingLeft.slice(0, -2) >> 0;
+    return parseInt(paddingLeft.slice(0, -2));
   }
 }
 
@@ -334,10 +339,8 @@ class TTree extends TTreeBase {
           await item.expand();
         }
       }
-    } else {
-      if (event.button !== 1) {
-        this.current = item;
-      }
+    } else if (event.button !== 1) {
+      this.current = item;
     }
   }
 
@@ -359,10 +362,8 @@ class TTree extends TTreeBase {
         event.preventDefault();
         if (this.current.isExpanded) {
           await this.current.collapse();
-        } else {
-          if (this.current.parentNode !== this) {
-            this.current = this.current.parentNode;
-          }
+        } else if (this.current.parentNode !== this) {
+          this.current = this.current.parentNode;
         }
         break;
       case 38: // Up
@@ -373,20 +374,16 @@ class TTree extends TTreeBase {
             item = item.lastChild;
           }
           this.current = item;
-        } else {
-          if (this.current.parentNode !== this) {
-            this.current = this.current.parentNode;
-          }
+        } else if (this.current.parentNode !== this) {
+          this.current = this.current.parentNode;
         }
         break;
       case 39: // Right
         event.preventDefault();
         if (this.current.isExpandable && !this.current.isExpanded) {
           await this.current.expand();
-        } else {
-          if (this.current.firstChild) {
-            this.current = this.current.firstChild;
-          }
+        } else if (this.current.firstChild) {
+          this.current = this.current.firstChild;
         }
         break;
       case 40: // Down
@@ -403,6 +400,8 @@ class TTree extends TTreeBase {
           }
         }
         break;
+      default:
+      // do nothing
     }
   }
 }

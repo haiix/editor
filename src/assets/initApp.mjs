@@ -1,19 +1,31 @@
-import { nextTabbable } from './focus.mjs';
 import * as styleCtl from './style.mjs';
+import { nextTabbable } from './focus.mjs';
 
 const l = window.location;
-const base =
-  l.protocol + '//' + l.host + l.pathname.slice(0, l.pathname.lastIndexOf('/'));
+const base = `${l.protocol}//${l.host}${l.pathname.slice(0, l.pathname.lastIndexOf('/'))}`;
 
 styleCtl.lock();
+
+function handleError(app, error, selfHandle) {
+  styleCtl.unlock();
+  if (!selfHandle && app && app.onerror) {
+    app.onerror(error);
+  } else {
+    document.body.textContent = '';
+    const pre = document.createElement('pre');
+    pre.textContent = (error.stack ?? error.message).replaceAll(base, '.');
+    document.body.appendChild(pre);
+    throw error;
+  }
+}
 
 export async function initApp(App) {
   let app = null;
   try {
     app = new App();
     if (
-      !Object.prototype.hasOwnProperty.call(app, 'onerror') &&
-      !Object.prototype.hasOwnProperty.call(App.prototype, 'onerror')
+      !Object.hasOwn(app, 'onerror') &&
+      !Object.hasOwn(App.prototype, 'onerror')
     ) {
       app.onerror = (error) => {
         handleError(app, error, true);
@@ -44,19 +56,6 @@ export async function initApp(App) {
     }
   } catch (error) {
     handleError(app, error, false);
-  }
-}
-
-function handleError(app, error, selfHandle) {
-  styleCtl.unlock();
-  if (!selfHandle && app && app.onerror) {
-    app.onerror(error);
-  } else {
-    document.body.textContent = '';
-    const pre = document.createElement('pre');
-    pre.textContent = (error.stack ?? error.message).replaceAll(base, '.');
-    document.body.appendChild(pre);
-    throw error;
   }
 }
 

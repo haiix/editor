@@ -9,7 +9,6 @@
       {
         "imports": {
           "@haiix/tcomponent": "./node_modules/@haiix/tcomponent/TComponent.mjs",
-          "@haiix/seq": "./node_modules/@haiix/seq/seq.mjs",
           "@zip.js/zip.js": "./node_modules/@zip.js/zip.js/index.js",
           "monaco-editor/esm/vs/editor/editor.api.js": "./src/index-debug.importmap.mjs",
           "typescript": "./src/index-debug.importmap.mjs"
@@ -23,17 +22,12 @@
       require([
         'vs/editor/editor.main',
         './node_modules/typescript/lib/typescript.js',
-      ], function () {
-        (async function () {
-          try {
-            await import('./src/index.mjs');
-          } catch (error) {
-            document.body.textContent = error.stack;
-            throw error;
-          }
-        })();
+      ], () => {
+        import('./src/index.mjs').catch((error) => {
+          document.body.textContent = error?.stack ?? error;
+          throw error;
+        });
       });
     </script>
-    <script type="module"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-function idbOpen({ name = '', version = undefined, onupgradeneeded = null }) {
+function idbOpen({ name = '', version, onupgradeneeded = null }) {
   return new Promise((resolve, reject) => {
     const req = self.indexedDB.open(name, version);
     req.onupgradeneeded = (event) => {
@@ -10,7 +10,7 @@ function idbOpen({ name = '', version = undefined, onupgradeneeded = null }) {
         reject(err);
       }
     };
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = (event) => {
@@ -25,7 +25,7 @@ export function deleteDatabase(name) {
     req.onerror = (event) => {
       reject(event.target.error);
     };
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
   });
@@ -40,28 +40,28 @@ export async function getVersion(name) {
 
 export async function objectStoreNames(conf) {
   const db = await idbOpen(conf);
-  const objectStoreNames = db.objectStoreNames;
+  const currObjectStoreNames = db.objectStoreNames;
   db.close();
-  return objectStoreNames;
+  return currObjectStoreNames;
 }
 
 export async function tx(conf, osns, mode, fn) {
   const db = await idbOpen(conf);
   return await new Promise((resolve, reject) => {
     let val;
-    const tx = db.transaction(osns, mode);
-    tx.oncomplete = (event) => {
+    const ctx = db.transaction(osns, mode);
+    ctx.oncomplete = () => {
       db.close();
       resolve(val);
     };
-    tx.onerror = (event) => {
+    ctx.onerror = (event) => {
       db.close();
       reject(event.target.error);
     };
     try {
-      val = fn(tx);
+      val = fn(ctx);
     } catch (err) {
-      tx.abort();
+      ctx.abort();
       db.close();
       reject(err);
     }
@@ -71,7 +71,7 @@ export async function tx(conf, osns, mode, fn) {
 export function add(os, item) {
   return new Promise((resolve, reject) => {
     const req = os.add(item);
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = (event) => {
@@ -83,7 +83,7 @@ export function add(os, item) {
 export function put(os, item) {
   return new Promise((resolve, reject) => {
     const req = os.put(item);
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = (event) => {
@@ -95,7 +95,7 @@ export function put(os, item) {
 export function get(os, key) {
   return new Promise((resolve, reject) => {
     const req = os.get(key);
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = (event) => {
@@ -107,7 +107,7 @@ export function get(os, key) {
 export function del(os, item) {
   return new Promise((resolve, reject) => {
     const req = os.delete(item);
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = (event) => {
@@ -119,7 +119,7 @@ export function del(os, item) {
 export function count(os, key) {
   return new Promise((resolve, reject) => {
     const req = os.count(key);
-    req.onsuccess = (event) => {
+    req.onsuccess = () => {
       resolve(req.result);
     };
     req.onerror = (event) => {
@@ -132,15 +132,15 @@ export function cursor({ index, range = null, direction = 'next', forEach }) {
   return new Promise((resolve, reject) => {
     let result;
     const req = index.openCursor(range, direction);
-    req.onsuccess = (event) => {
-      const cursor = req.result;
-      if (cursor) {
+    req.onsuccess = () => {
+      const cCursor = req.result;
+      if (cCursor) {
         try {
-          result = forEach(cursor.value, cursor);
+          result = forEach(cCursor.value, cCursor);
         } catch (error) {
           reject(error);
         }
-        cursor.advance(result === undefined ? 1 : 0xffffffff);
+        cCursor.advance(result == null ? 1 : 0xffffffff);
       } else {
         resolve(result);
       }
