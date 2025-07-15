@@ -200,6 +200,7 @@ export default class IdbFile {
       movedPaths.push([
         _prev.slice(this.workspace.length),
         _new.slice(this.workspace.length),
+        fileData,
       ]);
 
       cursor.continue();

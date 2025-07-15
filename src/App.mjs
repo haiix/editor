@@ -26,46 +26,6 @@ const tsCompilerOptions = {
   experimentalDecorators: true,
 };
 
-// https://github.com/Microsoft/monaco-editor/issues/926
-function switchModelToNewUri(monaco, oldModel, newUri) {
-  const newModel = monaco.editor.createModel(
-    oldModel.getValue(),
-    oldModel.getLanguageId(),
-    newUri,
-  );
-
-  const fsPath = newUri.fsPath; // \\filename
-  const formatted = newUri.toString(); // file:///filename
-
-  const editStacks = oldModel._commandManager._undoRedoService._editStacks;
-
-  const newEditStacks = new Map();
-
-  function adjustEditStack(c) {
-    c.actual.model = newModel;
-    c.resourceLabel = fsPath;
-    c.resourceLabels = [fsPath];
-    c.strResource = formatted;
-    c.strResources = [formatted];
-  }
-
-  editStacks.forEach((s) => {
-    s.resourceLabel = fsPath;
-    s.strResource = formatted;
-
-    s._future.forEach(adjustEditStack);
-    s._past.forEach(adjustEditStack);
-
-    newEditStacks.set(formatted, s);
-  });
-
-  newModel._commandManager._undoRedoService._editStacks = newEditStacks;
-
-  oldModel.dispose();
-
-  return newModel;
-}
-
 const ukey = 'my-app';
 style(styleDef.ui);
 style(styleDef.fullscreen);
@@ -480,7 +440,7 @@ export default class App extends TElement {
       iframe.src = URL.createObjectURL(file); // TODO close時にrevoke
       view.appendChild(iframe);
     } else {
-      await this.createEditor(tab, path);
+      await this.initEditorTab(tab, path);
       tab.editor.focus();
       view.classList.add('editor-view'); // ツールチップが隠れないようにする
     }
@@ -489,7 +449,7 @@ export default class App extends TElement {
   /**
    * ファイルロードのうち、Monaco Editor初期化部分
    */
-  async createEditor(tab, path) {
+  async initEditorTab(tab, path) {
     const model = await this.createEditorModel(path, tab.file);
 
     // JavaScriptは createModel()のlanguageに'typescript'、
@@ -908,18 +868,17 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
 
     const movedPaths = await this.idbFile.moveFile(oldPath, newPath);
 
-    for (const [_old, _new] of movedPaths) {
+    for (const [_old, _new, fileData] of movedPaths) {
       // Monaco Editorのモデルを作り直す
       if (this.editorModels[_old]) {
-        this.editorModels[_new] = switchModelToNewUri(
-          this.monaco,
-          this.editorModels[_old],
-          _new,
-        );
+        this.editorModels[_old].dispose();
         delete this.editorModels[_old];
-        this.tabs.childNodes
-          .find((tab) => tab.value === _old)
-          ?.editor.setModel(this.editorModels[_new]);
+
+        this.editorModels[_new] = this.createEditorModel(_new, fileData.file);
+        const tab = this.tabs.childNodes.find((tab) => tab.value === _old);
+        if (tab) {
+          this.initEditorTab(tab, this.editorModels[_new]);
+        }
       }
 
       // タブのパスを更新
