@@ -33,12 +33,10 @@ export default defineConfig([
       'max-classes-per-file': 'off',
       'max-lines': 'off',
       'max-params': ['error', 5],
-      //'max-statements': ['error', 30],
+      'max-statements': ['error', 30],
 
       'no-underscore-dangle': 'off', // Temporarily disabled
       'max-lines-per-function': 'off', // Temporarily disabled
-      'max-statements': 'off', // Temporarily disabled
-      complexity: 'off', // Temporarily disabled
 
       'no-await-in-loop': 'warn',
       'no-bitwise': 'error',

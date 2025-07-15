@@ -437,35 +437,7 @@ export default class App extends TElement {
         const view = new TList.Item({ value: path });
         const tab = new EditorTab({ view, path, file });
 
-        if (file.type.startsWith('image/')) {
-          // 画像
-          const image = new Image();
-          image.src = URL.createObjectURL(file); // TODO close時にrevoke
-          image.alt = path;
-          image.onmousedown = (event) => event.preventDefault();
-          view.appendChild(image);
-        } else if (file.type.startsWith('audio/')) {
-          // 音声
-          const audio = new Audio();
-          audio.controls = true;
-          audio.src = URL.createObjectURL(file); // TODO close時にrevoke
-          view.appendChild(audio);
-        } else if (file.type.startsWith('video/')) {
-          // 動画
-          const video = document.createElement('video');
-          video.controls = true;
-          video.src = URL.createObjectURL(file); // TODO close時にrevoke
-          view.appendChild(video);
-        } else if (file.type === 'application/pdf') {
-          const iframe = document.createElement('iframe');
-          iframe.title = path;
-          iframe.src = URL.createObjectURL(file); // TODO close時にrevoke
-          view.appendChild(iframe);
-        } else {
-          await this.createEditor(tab, path);
-          tab.editor.focus();
-          view.classList.add('editor-view'); // ツールチップが隠れないようにする
-        }
+        this.openMediaTab(view, tab, file, path);
 
         this.tabs.appendChild(tab);
         this.views.appendChild(view);
@@ -476,6 +448,38 @@ export default class App extends TElement {
       this.tabs.value = path;
       this.mainArea.current = this.tabViews;
       await this.saveTabs();
+    }
+  }
+
+  async openMediaTab(view, tab, file, path) {
+    if (file.type.startsWith('image/')) {
+      // 画像
+      const image = new Image();
+      image.src = URL.createObjectURL(file); // TODO close時にrevoke
+      image.alt = path;
+      image.onmousedown = (event) => event.preventDefault();
+      view.appendChild(image);
+    } else if (file.type.startsWith('audio/')) {
+      // 音声
+      const audio = new Audio();
+      audio.controls = true;
+      audio.src = URL.createObjectURL(file); // TODO close時にrevoke
+      view.appendChild(audio);
+    } else if (file.type.startsWith('video/')) {
+      // 動画
+      const video = document.createElement('video');
+      video.controls = true;
+      video.src = URL.createObjectURL(file); // TODO close時にrevoke
+      view.appendChild(video);
+    } else if (file.type === 'application/pdf') {
+      const iframe = document.createElement('iframe');
+      iframe.title = path;
+      iframe.src = URL.createObjectURL(file); // TODO close時にrevoke
+      view.appendChild(iframe);
+    } else {
+      await this.createEditor(tab, path);
+      tab.editor.focus();
+      view.classList.add('editor-view'); // ツールチップが隠れないようにする
     }
   }
 
@@ -786,44 +790,8 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
   async command(command) {
     switch (command) {
       case 'newFile':
-      case 'newFolder': {
-        let parentFolder = this.fileTree.current;
-        if (parentFolder) {
-          if (!parentFolder.isExpandable)
-            parentFolder = parentFolder.parentNode;
-          if (parentFolder !== this.fileTree) parentFolder.expand();
-        }
-        const typeName = command === 'newFile' ? 'ファイル' : 'フォルダー';
-        let name = '';
-        while (true) {
-          name = await this.inputFileName(
-            `${typeName}名`,
-            name,
-            `新規${typeName}`,
-          );
-          if (!name) return null;
-          const type = this.idbFile.getFileType(name);
-          const path = this.fileTree.getFolderPath() + name;
-          const fileData =
-            command === 'newFile'
-              ? { path, file: new Blob([''], { type }) }
-              : { path };
-          try {
-            await this.addFile(fileData);
-            this.fileTree.focus();
-            return null;
-          } catch (error) {
-            if (error.name === 'ConstraintError') {
-              await alert(
-                'この場所には同名のファイルまたはフォルダーがあります',
-                'エラー',
-              );
-            } else {
-              throw error;
-            }
-          }
-        }
-      }
+      case 'newFolder':
+        return this.newFileOrFolder(command === 'newFolder');
       case 'rename': {
         const oldName = this.fileTree.current.text;
 
@@ -854,6 +822,39 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         throw new Error(`Undefiend command: ${command}`);
     }
     return null;
+  }
+
+  async newFileOrFolder(isFolder) {
+    let parentFolder = this.fileTree.current;
+    if (parentFolder) {
+      if (!parentFolder.isExpandable) parentFolder = parentFolder.parentNode;
+      if (parentFolder !== this.fileTree) parentFolder.expand();
+    }
+    const typeName = isFolder ? 'フォルダー' : 'ファイル';
+    let name = '';
+    while (true) {
+      name = await this.inputFileName(`${typeName}名`, name, `新規${typeName}`);
+      if (!name) return null;
+      const type = this.idbFile.getFileType(name);
+      const path = this.fileTree.getFolderPath() + name;
+      const fileData = isFolder
+        ? { path }
+        : { path, file: new Blob([''], { type }) };
+      try {
+        await this.addFile(fileData);
+        this.fileTree.focus();
+        return null;
+      } catch (error) {
+        if (error.name === 'ConstraintError') {
+          await alert(
+            'この場所には同名のファイルまたはフォルダーがあります',
+            'エラー',
+          );
+        } else {
+          throw error;
+        }
+      }
+    }
   }
 
   /**

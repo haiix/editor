@@ -344,64 +344,80 @@ class TTree extends TTreeBase {
     }
   }
 
-  async _handleTreeKeydown(event) {
+  _handleTreeKeydown(event) {
     if (typeof this.onkeydown === 'function') {
       const result = this.onkeydown(event);
-      if (result === false || event.defaultPrevented) return;
+      if (result === false || event.defaultPrevented) return null;
     }
 
-    if (!this.current) return;
+    if (!this.current) return null;
+
     switch (event.keyCode) {
-      case 8: // Back Space
-        event.preventDefault();
-        if (this.current.parentNode !== this) {
-          this.current = this.current.parentNode;
-        }
-        break;
-      case 37: // Left
-        event.preventDefault();
-        if (this.current.isExpanded) {
-          await this.current.collapse();
-        } else if (this.current.parentNode !== this) {
-          this.current = this.current.parentNode;
-        }
-        break;
-      case 38: // Up
-        event.preventDefault();
-        if (this.current.previousSibling) {
-          let item = this.current.previousSibling;
-          while (item.isExpanded && item.lastChild) {
-            item = item.lastChild;
-          }
-          this.current = item;
-        } else if (this.current.parentNode !== this) {
-          this.current = this.current.parentNode;
-        }
-        break;
-      case 39: // Right
-        event.preventDefault();
-        if (this.current.isExpandable && !this.current.isExpanded) {
-          await this.current.expand();
-        } else if (this.current.firstChild) {
-          this.current = this.current.firstChild;
-        }
-        break;
-      case 40: // Down
-        event.preventDefault();
-        if (this.current.isExpanded && this.current.firstChild) {
-          this.current = this.current.firstChild;
-        } else {
-          let item = this.current;
-          while (item !== this && !item.nextSibling) {
-            item = item.parentNode;
-          }
-          if (item !== this) {
-            this.current = item.nextSibling;
-          }
-        }
-        break;
+      case 8:
+        return this._backSpace(event);
+      case 37:
+        return this._left(event);
+      case 38:
+        return this._up(event);
+      case 39:
+        return this._right(event);
+      case 40:
+        return this._down(event);
       default:
-      // do nothing
+        return null;
+    }
+  }
+
+  _backSpace(event) {
+    event.preventDefault();
+    if (this.current.parentNode !== this) {
+      this.current = this.current.parentNode;
+    }
+  }
+
+  async _left(event) {
+    event.preventDefault();
+    if (this.current.isExpanded) {
+      await this.current.collapse();
+    } else if (this.current.parentNode !== this) {
+      this.current = this.current.parentNode;
+    }
+  }
+
+  _up(event) {
+    event.preventDefault();
+    if (this.current.previousSibling) {
+      let item = this.current.previousSibling;
+      while (item.isExpanded && item.lastChild) {
+        item = item.lastChild;
+      }
+      this.current = item;
+    } else if (this.current.parentNode !== this) {
+      this.current = this.current.parentNode;
+    }
+  }
+
+  async _right(event) {
+    event.preventDefault();
+    if (this.current.isExpandable && !this.current.isExpanded) {
+      await this.current.expand();
+    } else if (this.current.firstChild) {
+      this.current = this.current.firstChild;
+    }
+  }
+
+  _down(event) {
+    event.preventDefault();
+    if (this.current.isExpanded && this.current.firstChild) {
+      this.current = this.current.firstChild;
+    } else {
+      let item = this.current;
+      while (item !== this && !item.nextSibling) {
+        item = item.parentNode;
+      }
+      if (item !== this) {
+        this.current = item.nextSibling;
+      }
     }
   }
 }
