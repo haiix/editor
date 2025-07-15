@@ -1,13 +1,9 @@
-import * as styleCtl from './style.mjs';
 import { nextTabbable } from './focus.mjs';
 
 const l = window.location;
 const base = `${l.protocol}//${l.host}${l.pathname.slice(0, l.pathname.lastIndexOf('/'))}`;
 
-styleCtl.lock();
-
 function handleError(app, error, selfHandle) {
-  styleCtl.unlock();
   if (!selfHandle && app && app.onerror) {
     app.onerror(error);
   } else {
@@ -35,7 +31,6 @@ export async function initApp(App) {
       const retVal = app.init();
       if (retVal?.then) await retVal;
     }
-    styleCtl.unlock();
     document.body.appendChild(app.element);
     const firstElem = nextTabbable(null, app.element);
     if (firstElem) firstElem.focus();

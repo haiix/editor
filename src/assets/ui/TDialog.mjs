@@ -5,54 +5,54 @@ import style from '../style.mjs';
 const ukey = 't-component-ui-dialog';
 
 style(`
-  .${ukey} {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    outline: none;
-  }
-  .${ukey}-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-  }
-  .${ukey}-container {
-    background: #FFF;
-    border: 1px solid #999;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
-    display: flex;
-    flex-flow: column nowrap;
-    color: #000;
-    background: #FFF;
-  }
-  .${ukey}-title {
-    flex: none;
-    padding: 4px;
-    color: #000;
-    background: #EEE;
-  }
-  .${ukey}-body {
-    flex: auto;
-  }
-  .${ukey}-buttons {
-    flex: none;
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 5px;
-  }
-  .${ukey}-buttons > button {
-    width: 75px;
-    margin: 5px;
-    white-space: nowrap;
-  }
+.${ukey} {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+}
+.${ukey}-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+.${ukey}-container {
+  background: #FFF;
+  border: 1px solid #999;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-flow: column nowrap;
+  color: #000;
+  background: #FFF;
+}
+.${ukey}-title {
+  flex: none;
+  padding: 4px;
+  color: #000;
+  background: #EEE;
+}
+.${ukey}-body {
+  flex: auto;
+}
+.${ukey}-buttons {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 5px;
+}
+.${ukey}-buttons > button {
+  width: 75px;
+  margin: 5px;
+  white-space: nowrap;
+}
 `);
 
 export default class TDialog extends TElement {

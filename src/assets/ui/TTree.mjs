@@ -10,66 +10,66 @@ import style from '../style.mjs';
 const CLASS_NAME = 't-component-ui-tree';
 
 style(`
-  .${CLASS_NAME} {
-    cursor: default;
-    outline: none;
-    overflow: auto;
-    background: #FFF;
-    color: #000;
-    -webkit-user-select: none; /* for Safari 3+, Safari on iOS 3+ */
-    user-select: none;
-    box-sizing: border-box;
-  }
-  .${CLASS_NAME} ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    min-width: max-content;
-  }
-  .${CLASS_NAME} li > div {
-    position: relative;
-    white-space: nowrap;
-    height: 24px;
-    line-height: 0;
-  }
-  .${CLASS_NAME} li > div > * {
-    vertical-align: middle;
-  }
-  .${CLASS_NAME} li > div:first-child::before {
-    content: "";
-    display: inline-block;
-    height: 100%;
-    vertical-align: middle;
-  }
-  .${CLASS_NAME} li > div:hover {
-    background: #DEF;
-  }
-  .${CLASS_NAME} li.current > div {
-    background: #DDD;
-  }
-  .${CLASS_NAME}:focus li.current > div {
-    background: #BDF;
-  }
-  .${CLASS_NAME} .expand-icon {
-    display: inline-block;
-    margin-right: 2px;
-    font-size: 18px;
-    color: #666;
-    opacity: 0;
-    transition: opacity .5s;
-  }
-  .${CLASS_NAME}:focus .expand-icon,
-  .${CLASS_NAME}:hover .expand-icon {
-    opacity: 1;
-  }
-  .${CLASS_NAME} .expand-icon:hover {
-    color: #3CF;
-  }
-  .${CLASS_NAME} .icon {
-    display: inline-block;
-    margin-right: 4px;
-    font-size: 18px;
-  }
+.${CLASS_NAME} {
+  cursor: default;
+  outline: none;
+  overflow: auto;
+  background: #FFF;
+  color: #000;
+  -webkit-user-select: none; /* for Safari 3+, Safari on iOS 3+ */
+  user-select: none;
+  box-sizing: border-box;
+}
+.${CLASS_NAME} ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  min-width: max-content;
+}
+.${CLASS_NAME} li > div {
+  position: relative;
+  white-space: nowrap;
+  height: 24px;
+  line-height: 0;
+}
+.${CLASS_NAME} li > div > * {
+  vertical-align: middle;
+}
+.${CLASS_NAME} li > div:first-child::before {
+  content: "";
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+.${CLASS_NAME} li > div:hover {
+  background: #DEF;
+}
+.${CLASS_NAME} li.current > div {
+  background: #DDD;
+}
+.${CLASS_NAME}:focus li.current > div {
+  background: #BDF;
+}
+.${CLASS_NAME} .expand-icon {
+  display: inline-block;
+  margin-right: 2px;
+  font-size: 18px;
+  color: #666;
+  opacity: 0;
+  transition: opacity .5s;
+}
+.${CLASS_NAME}:focus .expand-icon,
+.${CLASS_NAME}:hover .expand-icon {
+  opacity: 1;
+}
+.${CLASS_NAME} .expand-icon:hover {
+  color: #3CF;
+}
+.${CLASS_NAME} .icon {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: 18px;
+}
 `);
 
 class TTreeBase extends TElement {

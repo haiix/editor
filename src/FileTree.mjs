@@ -4,13 +4,13 @@ import style from './assets/style.mjs';
 const ukey = 'my-file-tree';
 
 style(`
-  .${ukey} {
-    height: 0;
-    min-height: 100%;
-  }
-  .${ukey} .drop-target {
-    background: #BDF;
-  }
+.${ukey} {
+  height: 0;
+  min-height: 100%;
+}
+.${ukey} .drop-target {
+  background: #BDF;
+}
 `);
 
 export default class FileTree extends TTree {

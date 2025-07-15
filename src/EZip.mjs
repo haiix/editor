@@ -6,26 +6,26 @@ const EXT = '.zip';
 
 const ukey = 'my-save-dialog';
 style(`
-  .${ukey}-body label {
-    display: block;
-    white-space: nowrap;
-    height: 24px;
-  }
-  .${ukey}-body label > span {
-    display: inline-block;
-    width: 100px;
-  }
-  .${ukey}-body details {
-    margin-top: 8px;
-  }
-  .${ukey}-body summary {
-    height: 24px;
-    color: #08E;
-    cursor: pointer;
-  }
-  .${ukey}-body summary:hover {
-    text-decoration: underline;
-  }
+.${ukey}-body label {
+  display: block;
+  white-space: nowrap;
+  height: 24px;
+}
+.${ukey}-body label > span {
+  display: inline-block;
+  width: 100px;
+}
+.${ukey}-body details {
+  margin-top: 8px;
+}
+.${ukey}-body summary {
+  height: 24px;
+  color: #08E;
+  cursor: pointer;
+}
+.${ukey}-body summary:hover {
+  text-decoration: underline;
+}
 `);
 
 const saveDialog = TDialog.create(

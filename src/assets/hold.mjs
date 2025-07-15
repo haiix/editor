@@ -1,66 +1,102 @@
-function call(bind, callback, args, onerror) {
-  if (!callback) return;
-  let retVal;
-  try {
-    retVal = callback.apply(bind, args);
-  } catch (error) {
-    if (onerror) {
-      onerror.call(bind, error);
-    }
-  }
-  if (!onerror || retVal == null || typeof retVal.then !== 'function') return;
-  (async () => {
-    try {
-      await retVal;
-    } catch (error) {
-      onerror.call(bind, error);
-    }
-  })();
-}
+const overlay = document.createElement('div');
+overlay.style.position = 'fixed';
+overlay.style.inset = '0';
 
 export function getPageCoordinate(event) {
-  const px = event.touches?.[0]?.clientX ?? event.pageX;
-  const py = event.touches?.[0]?.clientY ?? event.pageY;
-  return [px, py];
+  if (event instanceof TouchEvent) {
+    return {
+      x: event.touches[0]?.clientX ?? 0,
+      y: event.touches[0]?.clientY ?? 0,
+    };
+  }
+  return { x: event.pageX, y: event.pageY };
 }
 
-export default function hold({
-  ondragstart = null,
-  ondrag = null,
-  ondragend = null,
-  onerror = null,
-  cursor = '',
-  bind = null,
-  container = document.body,
-}) {
-  let modal = null;
-  const handleMousemove = (event) => {
-    event.preventDefault();
-    const [px, py] = getPageCoordinate(event);
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.setAttribute(
-        'style',
-        'position: fixed; top: 0; left: 0; right: 0; bottom: 0;',
-      );
-      if (cursor) modal.style.cursor = cursor;
-      container.appendChild(modal);
-      call(bind, ondragstart, [px, py, modal], onerror);
+class HoldController {
+  params;
+  point = { x: 0, y: 0 };
+  dragStarted = false;
+
+  constructor(params) {
+    this.params = params;
+  }
+
+  callback(callback) {
+    if (!callback) return;
+
+    let retVal = null;
+    try {
+      retVal = callback(this.point.x, this.point.y, overlay);
+    } catch (error) {
+      if (this.params.onerror) {
+        this.params.onerror(error);
+      }
     }
-    call(bind, ondrag, [px, py, modal], onerror);
-  };
-  const handleMouseup = (event) => {
-    event.preventDefault();
-    const [px, py] = getPageCoordinate(event);
-    window.removeEventListener('touchmove', handleMousemove);
-    window.removeEventListener('touchend', handleMouseup);
-    window.removeEventListener('mousemove', handleMousemove);
-    window.removeEventListener('mouseup', handleMouseup);
-    if (modal) container.removeChild(modal);
-    call(bind, ondragend, [px, py, modal], onerror);
-  };
-  window.addEventListener('touchmove', handleMousemove, { passive: false });
-  window.addEventListener('touchend', handleMouseup, { passive: false });
-  window.addEventListener('mousemove', handleMousemove, { passive: false });
-  window.addEventListener('mouseup', handleMouseup, { passive: false });
+
+    if (this.params.onerror && retVal instanceof Promise) {
+      retVal.catch(this.params.onerror);
+    }
+  }
+
+  handleMouseDown(event) {
+    this.point = getPageCoordinate(event);
+  }
+
+  handleMouseMove(event) {
+    const point = getPageCoordinate(event);
+    if (point.x === this.point.x && point.y === this.point.y) return;
+    this.point = point;
+
+    if (!this.dragStarted) {
+      if (this.params.cursor) overlay.style.cursor = this.params.cursor;
+      (this.params.container ?? document.body).append(overlay);
+      this.callback(this.params.ondragstart);
+      this.dragStarted = true;
+    }
+
+    this.callback(this.params.ondrag);
+  }
+
+  handleMouseUp(event) {
+    overlay.remove();
+    overlay.style.cursor = '';
+    this.point = getPageCoordinate(event);
+    this.callback(this.params.ondragend);
+  }
 }
+
+export function hold(params) {
+  const controller = new HoldController(params);
+
+  const handleMouseDown = (event) => {
+    event.preventDefault();
+    controller.handleMouseDown(event);
+  };
+  const handleMouseMove = (event) => {
+    event.preventDefault();
+    controller.handleMouseMove(event);
+  };
+  const handleMouseUp = (event) => {
+    event.preventDefault();
+    // eslint-disable-next-line no-use-before-define
+    for (const handler of handlers) {
+      removeEventListener(handler.type, handler.listener);
+    }
+    controller.handleMouseUp(event);
+  };
+
+  const handlers = [
+    { type: 'touchstart', listener: handleMouseDown },
+    { type: 'touchmove', listener: handleMouseMove },
+    { type: 'touchend', listener: handleMouseUp },
+    { type: 'mousedown', listener: handleMouseDown },
+    { type: 'mousemove', listener: handleMouseMove },
+    { type: 'mouseup', listener: handleMouseUp },
+  ];
+
+  for (const handler of handlers) {
+    addEventListener(handler.type, handler.listener, { passive: false });
+  }
+}
+
+export default hold;

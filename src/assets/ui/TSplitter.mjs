@@ -1,32 +1,32 @@
-import hold, { getPageCoordinate } from '../hold.mjs';
+import { getPageCoordinate, hold } from '../hold.mjs';
 import TElement from './TElement.mjs';
 import style from '../style.mjs';
 
 const ukey = 't-component-ui-splitter';
 
 style(`
-  .${ukey} {
-    z-index: 1;
-    background: #CCC;
-    cursor: w-resize;
-    width: 1px;
-  }
-  .${ukey}::after {
-    content: "";
-    display: block;
-    /*background: yellow;*/
-    width: 9px;
-    height: 100%;
-    position: relative;
-    left: -4px;
-  }
-  .${ukey}.holding::after {
-    /*background: blue;*/
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
+.${ukey} {
+  z-index: 1;
+  background: #CCC;
+  cursor: w-resize;
+  width: 1px;
+}
+.${ukey}::after {
+  content: "";
+  display: block;
+  /*background: yellow;*/
+  width: 9px;
+  height: 100%;
+  position: relative;
+  left: -4px;
+}
+.${ukey}.holding::after {
+  /*background: blue;*/
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 `);
 
 export default class TSplitter extends TElement {
@@ -51,7 +51,7 @@ export default class TSplitter extends TElement {
     } else {
       target = this.element.previousElementSibling;
     }
-    const [px] = getPageCoordinate(event);
+    const { x: px } = getPageCoordinate(event);
     const ox = px * m - window.getComputedStyle(target).width.slice(0, -2);
     this.element.classList.add('holding');
     hold({

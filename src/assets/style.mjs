@@ -1,20 +1,35 @@
-let locked = false;
-const styles = [];
+export class Style {
+  src = [];
+  requested = false;
+  styleElement = null;
 
-export function lock() {
-  locked = true;
+  add(value) {
+    this.src.push(value);
+    if (this.requested) return;
+    this.requested = true;
+    requestAnimationFrame(() => {
+      this.requested = false;
+      this.apply();
+    });
+  }
+
+  apply() {
+    if (!this.src.length) return;
+
+    if (!this.styleElement) {
+      this.styleElement = document.createElement('style');
+      document.head.appendChild(this.styleElement);
+    }
+
+    this.styleElement.insertAdjacentText(
+      'beforeend',
+      `${this.src.join('\n')}\n`,
+    );
+    this.src.length = 0;
+  }
 }
 
-export function unlock() {
-  locked = false;
-  if (styles.length === 0) return;
-  const elem = document.createElement('style');
-  elem.textContent = styles.join('\n');
-  document.head.appendChild(elem);
-  styles.length = 0;
-}
-
-export default function style(...text) {
-  styles.push(...text);
-  if (!locked) unlock();
+const instance = new Style();
+export default function style(value) {
+  instance.add(value);
 }

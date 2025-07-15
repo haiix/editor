@@ -5,41 +5,41 @@ import style from './assets/style.mjs';
 const ukey = 'my-flie-list-context-menu';
 
 style(`
-  .${ukey} {
-    display: inline-block;
-    position: absolute;
-    background: #FFF;
-    border: 1px solid #999;
-    padding: 2px 0;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
-  .${ukey} > * {
-    display: block;
-    line-height: 22px;
-    padding: 0 10px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-  }
-  .${ukey} > * > * {
-    vertical-align: middle;
-  }
-  .${ukey} > * > .material-icons {
-    font-size: 16px;
-    position: relative;
-    top: -2px;
-    left: -6px;
-  }
-  .${ukey} > hr {
-    border-top: 1px solid #CCC;
-    margin: 4px;
-  }
-  .${ukey} > .disabled {
-    color: #999;
-  }
-  .${ukey} > .current:not(.disabled) {
-    border: 1px solid #BDF;
-    background: #DEF;
-  }
+.${ukey} {
+  display: inline-block;
+  position: absolute;
+  background: #FFF;
+  border: 1px solid #999;
+  padding: 2px 0;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+.${ukey} > * {
+  display: block;
+  line-height: 22px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.${ukey} > * > * {
+  vertical-align: middle;
+}
+.${ukey} > * > .material-icons {
+  font-size: 16px;
+  position: relative;
+  top: -2px;
+  left: -6px;
+}
+.${ukey} > hr {
+  border-top: 1px solid #CCC;
+  margin: 4px;
+}
+.${ukey} > .disabled {
+  color: #999;
+}
+.${ukey} > .current:not(.disabled) {
+  border: 1px solid #BDF;
+  background: #DEF;
+}
 `);
 
 class ContextMenu extends TElement {

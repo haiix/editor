@@ -66,112 +66,115 @@ function switchModelToNewUri(monaco, oldModel, newUri) {
   return newModel;
 }
 
+const ukey = 'my-app';
+style(styleDef.ui);
+style(styleDef.fullscreen);
+style(styleDef.flex);
+style(`
+.${ukey} .select-template-button, .select-template-choices button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-align: inherit;
+  background: inherit;
+  color: #06C;
+  cursor: pointer;
+}
+.${ukey} .select-template-button:hover, .t-component-ui-dialog a:hover {
+  color: #39F;
+  text-decoration: underline;
+}
+.select-template-choices {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.select-template-choices button {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1em;
+}
+.select-template-choices button:hover {
+  background: #DEF;
+}
+.${ukey} .m-icon {
+  font-size: 18px;
+  width: 1em;
+}
+.${ukey} > * {
+  overflow: hidden;
+}
+.${ukey} .menubar {
+  background: #EEE;
+  border-bottom: 1px solid #CCC;
+}
+.${ukey} .menubar > * {
+  padding: 2px 8px;
+  background: #EEE;
+  border: 1px solid transparent;
+}
+.${ukey} .menubar > :hover {
+  border: 1px solid #9CF;
+  background: #DEF;
+}
+.${ukey} .menubar > .selected {
+  border: 1px solid #9CF;
+  background: #BDF;
+}
+.${ukey} .side-area {
+  width: 160px;
+}
+.${ukey} .side-area > li:not(.current) {
+  display: none;
+}
+.${ukey} .side-area-empty {
+  justify-content: center;
+  align-items: center;
+  padding: 0 2em;
+}
+.${ukey} .main-area {
+  background: #EEE;
+  z-index: 2;
+}
+.${ukey} .main-area > li:not(.current) {
+  display: none;
+}
+.${ukey} .main-area-empty {
+  justify-content: center;
+  align-items: center;
+  padding: 0 4em;
+}
+.${ukey} .editor-tabs {
+  overflow-x: clip;
+}
+.${ukey} .views {
+  background: #EEE;
+}
+.${ukey} .views > li {
+  width: 0;
+  height: 0;
+  min-width: 100%;
+  min-height: 100%;
+  display: none;
+  position: relative;
+  z-index: 0;
+}
+.${ukey} .views > li:not(.editor-view) {
+  overflow: auto;
+}
+.${ukey} .views > li.current {
+  display: inline-block;
+}
+.${ukey} .views iframe {
+  border: none;
+  width: 100%;
+  height: calc(100% - 4px);
+}
+`);
+
 export default class App extends TElement {
   template() {
-    const ukey = 'my-app';
-    style(styleDef.ui, styleDef.fullscreen, styleDef.flex);
-    style(`
-      .${ukey} .select-template-button, .select-template-choices button {
-        margin: 0;
-        padding: 0;
-        border: none;
-        text-align: inherit;
-        background: inherit;
-        color: #06C;
-        cursor: pointer;
-      }
-      .${ukey} .select-template-button:hover, .t-component-ui-dialog a:hover {
-        color: #39F;
-        text-decoration: underline;
-      }
-      .select-template-choices {
-        margin: 0;
-        padding: 0;
-        list-style-type: none;
-      }
-      .select-template-choices button {
-        display: inline-block;
-        box-sizing: border-box;
-        width: 100%;
-        padding: 1em;
-      }
-      .select-template-choices button:hover {
-        background: #DEF;
-      }
-      .${ukey} .m-icon {
-        font-size: 18px;
-        width: 1em;
-      }
-      .${ukey} > * {
-        overflow: hidden;
-      }
-      .${ukey} .menubar {
-        background: #EEE;
-        border-bottom: 1px solid #CCC;
-      }
-      .${ukey} .menubar > * {
-        padding: 2px 8px;
-        background: #EEE;
-        border: 1px solid transparent;
-      }
-      .${ukey} .menubar > :hover {
-        border: 1px solid #9CF;
-        background: #DEF;
-      }
-      .${ukey} .menubar > .selected {
-        border: 1px solid #9CF;
-        background: #BDF;
-      }
-      .${ukey} .side-area {
-        width: 160px;
-      }
-      .${ukey} .side-area > li:not(.current) {
-        display: none;
-      }
-      .${ukey} .side-area-empty {
-        justify-content: center;
-        align-items: center;
-        padding: 0 2em;
-      }
-      .${ukey} .main-area {
-        background: #EEE;
-        z-index: 2;
-      }
-      .${ukey} .main-area > li:not(.current) {
-        display: none;
-      }
-      .${ukey} .main-area-empty {
-        justify-content: center;
-        align-items: center;
-        padding: 0 4em;
-      }
-      .${ukey} .editor-tabs {
-        overflow-x: clip;
-      }
-      .${ukey} .views {
-        background: #EEE;
-      }
-      .${ukey} .views > li {
-        width: 0;
-        height: 0;
-        min-width: 100%;
-        min-height: 100%;
-        display: none;
-        position: relative;
-        z-index: 0;
-      }
-      .${ukey} .views > li:not(.editor-view) {
-        overflow: auto;
-      }
-      .${ukey} .views > li.current {
-        display: inline-block;
-      }
-      .${ukey} .views iframe {
-        border: none;
-        width: 100%;
-        height: calc(100% - 4px);
-      }
-    `);
     this.uses(FileTree, TSplitter, TList, TList.Item);
     return `
       <div class="${ukey} fullscreen flex column"
@@ -686,7 +689,7 @@ export default class App extends TElement {
 <html lang="ja">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My App</title>
   </head>
   <body>
@@ -710,7 +713,7 @@ export default class App extends TElement {
 <html lang="ja">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My App</title>
     <link rel="stylesheet" href="style.css">
     <script type="module" src="main.ts"></script>
@@ -997,6 +1000,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         if (dropRect) dropRect.elem.classList.add('drop-target');
       },
       ondragend: () => {
+        shadowElem?.remove();
         if (dropRect) {
           dropRect.elem.classList.remove('drop-target');
 
