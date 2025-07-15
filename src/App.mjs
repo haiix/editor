@@ -324,15 +324,15 @@ export default class App extends TElement {
    */
   async main() {
     this.typescript = await import(/* webpackPrefetch: true */ 'typescript');
-    if (this.idbFile.firstTime) {
-      // WorkSpace作成
-      await this.idbFile.initWorkSpaces();
-      await this.createTemplateFiles(2);
-    } else {
+    if (await this.idbFile.initialized()) {
       await Promise.all([
         this.refreshFileTreeAndCreateModels(),
         this.restoreTabs(),
       ]);
+    } else {
+      // WorkSpace作成
+      await this.idbFile.initWorkSpaces();
+      await this.createTemplateFiles(2);
     }
   }
 

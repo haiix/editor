@@ -1,6 +1,5 @@
 /* global __BUILD_TIMESTAMP__ */
-import * as idb from './assets/idb.mjs';
-// importScripts('./src/idb.js')
+import * as idb from '@haiix/idb';
 
 class Main {
   constructor() {
@@ -10,16 +9,9 @@ class Main {
       location.pathname.lastIndexOf('/'),
     );
     this.base = `${location.protocol}//${location.host}/${this.namespace === '' ? '' : `${this.namespace}/`}`;
-    this.dbSchema = {
-      name: this.namespace,
-      version: 1,
-      onupgradeneeded(db, tx, version) {
-        if (version < 1) {
-          db.createObjectStore('files', { keyPath: 'path' });
-          // db.createObjectStore('settings', { keyPath: 'key' })
-        }
-      },
-    };
+    // TODO IdbFile.mjsと共通化
+    this.db = idb.open(this.namespace);
+    this.fileStore = this.db.objectStore('files');
   }
 
   main() {
@@ -103,15 +95,9 @@ class Main {
   }
 
   getFileData(root, url) {
-    return idb.tx(this.dbSchema, ['files'], 'readonly', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.only(
-          url.slice(root.length) + (url.slice(-1) === '/' ? 'index.html' : ''),
-        ),
-        forEach: (value) => value,
-      }),
-    );
+    const path =
+      url.slice(root.length) + (url.slice(-1) === '/' ? 'index.html' : '');
+    return this.fileStore.index('path').get(path);
   }
 }
 

@@ -1,42 +1,47 @@
-import * as idb from './assets/idb.mjs';
+import * as idb from '@haiix/idb';
 
 export default class IdbFile {
   /**
    * IDB上にファイル保存用のDBを作成する
    */
   constructor(name) {
-    this.firstTime = false;
-    this.dbSchema = {
-      name,
-      version: 1,
-      onupgradeneeded: (db, tx, version) => {
-        if (version < 1) {
-          this.firstTime = true;
-          const store = db.createObjectStore('files', {
-            keyPath: 'id',
-            autoIncrement: true,
-          });
-          store.createIndex('path', 'path', { unique: true });
-        }
+    this.db = idb.open(name);
+    this.fileStore = this.db.objectStore(
+      'files',
+      {
+        keyPath: 'id',
+        autoIncrement: true,
       },
-    };
+      [
+        {
+          name: 'path',
+          keyPath: 'path',
+          options: {
+            unique: true,
+          },
+        },
+      ],
+    );
     this.workspace = 'workspace1/';
+  }
+
+  async initialized() {
+    return (await this.fileStore.count()) > 0;
   }
 
   /**
    * IDB上にデフォルトのワークスペース4つを作成する
    */
   initWorkSpaces() {
-    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) => {
-      const store = tx.objectStore('files');
-      for (let i = 1; i <= 4; i++) {
-        idb.add(store, {
+    return Promise.all(
+      [1, 2, 3, 4].map((i) =>
+        this.fileStore.add({
           path: `workspace${i}`,
           label: `ワークスペース${i}`,
           setting: this.createDefaultSetting(),
-        });
-      }
-    });
+        }),
+      ),
+    );
   }
 
   /**
@@ -45,17 +50,14 @@ export default class IdbFile {
    */
   async getAllWorkSpaces() {
     const workSpaces = [];
-    await idb.tx(this.dbSchema, ['files'], 'readonly', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        forEach: (fileData) => {
-          if (!fileData.path.includes('/')) {
-            fileData.setting = this.createDefaultSetting(fileData.setting);
-            workSpaces.push(fileData);
-          }
-        },
-      }),
-    );
+    for await (const cursor of this.fileStore.index('path').openCursor()) {
+      const fileData = cursor.value;
+      if (!fileData.path.includes('/')) {
+        fileData.setting = this.createDefaultSetting(fileData.setting);
+        workSpaces.push(fileData);
+      }
+      cursor.continue();
+    }
     return workSpaces;
   }
 
@@ -66,26 +68,24 @@ export default class IdbFile {
   async getAllFoldersAndFiles() {
     const folders = [];
     const files = [];
-    await idb.tx(this.dbSchema, ['files'], 'readonly', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace),
-        forEach: (_fileData) => {
-          let fileData = _fileData;
-          if (!fileData.path.startsWith(this.workspace)) return false;
-          fileData = {
-            ...fileData,
-            path: fileData.path.slice(this.workspace.length),
-          };
-          if (fileData.file) {
-            files.push(fileData);
-          } else {
-            folders.push(fileData);
-          }
-          return null;
-        },
-      }),
-    );
+    for await (const cursor of this.fileStore
+      .index('path')
+      .openCursor(IDBKeyRange.lowerBound(this.workspace))) {
+      let fileData = cursor.value;
+      if (!fileData.path.startsWith(this.workspace)) break;
+
+      fileData = {
+        ...fileData,
+        path: fileData.path.slice(this.workspace.length),
+      };
+      if (fileData.file) {
+        files.push(fileData);
+      } else {
+        folders.push(fileData);
+      }
+
+      cursor.continue();
+    }
     return { folders, files };
   }
 
@@ -95,20 +95,19 @@ export default class IdbFile {
    */
   async getAllFiles() {
     const inputFiles = [];
-    await idb.tx(this.dbSchema, ['files'], 'readonly', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace),
-        forEach: (fileData) => {
-          if (!fileData.path.startsWith(this.workspace)) return false;
-          inputFiles.push({
-            ...fileData,
-            path: fileData.path.slice(this.workspace.length),
-          });
-          return null;
-        },
-      }),
-    );
+    for await (const cursor of this.fileStore
+      .index('path')
+      .openCursor(IDBKeyRange.lowerBound(this.workspace))) {
+      const fileData = cursor.value;
+      if (!fileData.path.startsWith(this.workspace)) break;
+
+      inputFiles.push({
+        ...fileData,
+        path: fileData.path.slice(this.workspace.length),
+      });
+
+      cursor.continue();
+    }
     return inputFiles;
   }
 
@@ -116,13 +115,15 @@ export default class IdbFile {
    * 複数のファイルをIDBに追加する
    * @param fileDataList
    */
-  async addFiles(fileDataList) {
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) => {
-      const store = tx.objectStore('files');
-      for (const fileData of fileDataList) {
-        idb.put(store, { ...fileData, path: this.workspace + fileData.path });
-      }
-    });
+  addFiles(fileDataList) {
+    return Promise.all(
+      fileDataList.map((fileData) =>
+        this.fileStore.put({
+          ...fileData,
+          path: this.workspace + fileData.path,
+        }),
+      ),
+    );
   }
 
   /**
@@ -132,37 +133,34 @@ export default class IdbFile {
    */
   async removeFile(path) {
     const removedPaths = [];
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace + path),
-        forEach: (fileData, cursor) => {
-          if (!`${fileData.path}/`.startsWith(`${this.workspace}${path}/`))
-            return false;
-          cursor.delete(fileData);
-          removedPaths.push(fileData.path.slice(this.workspace.length));
-          return null;
-        },
-      }),
-    );
+    for await (const cursor of this.fileStore
+      .index('path')
+      .cursor(IDBKeyRange.lowerBound(this.workspace + path))) {
+      const fileData = cursor.value;
+      if (!`${fileData.path}/`.startsWith(`${this.workspace}${path}/`)) break;
+
+      cursor.delete(fileData);
+      removedPaths.push(fileData.path.slice(this.workspace.length));
+
+      cursor.continue();
+    }
     return removedPaths;
   }
 
   /**
    * ワークスペースの全ファイルを削除する
    */
-  removeAllFiles() {
-    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace),
-        forEach: (fileData, cursor) => {
-          if (!fileData.path.startsWith(this.workspace)) return false;
-          cursor.delete();
-          return null;
-        },
-      }),
-    );
+  async removeAllFiles() {
+    for await (const cursor of this.fileStore
+      .index('path')
+      .openCursor(IDBKeyRange.lowerBound(this.workspace))) {
+      const fileData = cursor.value;
+      if (!fileData.path.startsWith(this.workspace)) break;
+
+      cursor.delete();
+
+      cursor.continue();
+    }
   }
 
   /**
@@ -173,41 +171,39 @@ export default class IdbFile {
    */
   async moveFile(oldPath, newPath) {
     const movedPaths = [];
-    await idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.lowerBound(this.workspace + oldPath),
-        forEach: (fileData, cursor) => {
-          if (!`${fileData.path}/`.startsWith(`${this.workspace}${oldPath}/`))
-            return false;
-          const _prev = fileData.path;
-          const _new =
-            this.workspace +
-            newPath +
-            fileData.path.slice((this.workspace + oldPath).length);
+    for await (const cursor of this.fileStore
+      .index('path')
+      .openCursor(IDBKeyRange.lowerBound(this.workspace + oldPath))) {
+      const fileData = cursor.value;
+      if (!`${fileData.path}/`.startsWith(`${this.workspace}${oldPath}/`))
+        break;
 
-          // console.log('mv ' + _prev + ' ' + _new)
+      const _prev = fileData.path;
+      const _new =
+        this.workspace +
+        newPath +
+        fileData.path.slice((this.workspace + oldPath).length);
 
-          fileData.path = _new;
-          if (fileData.file) {
-            const prevType = this.getFileType(_prev);
-            const newType = this.getFileType(_new);
-            if (prevType !== newType) {
-              fileData.file = new Blob([fileData.file], { type: newType });
-              fileData.srcFile = null;
-            }
-          }
-          cursor.update(fileData);
+      // console.log('mv ' + _prev + ' ' + _new)
 
-          movedPaths.push([
-            _prev.slice(this.workspace.length),
-            _new.slice(this.workspace.length),
-          ]);
+      fileData.path = _new;
+      if (fileData.file) {
+        const prevType = this.getFileType(_prev);
+        const newType = this.getFileType(_new);
+        if (prevType !== newType) {
+          fileData.file = new Blob([fileData.file], { type: newType });
+          fileData.srcFile = null;
+        }
+      }
+      cursor.update(fileData);
 
-          return true;
-        },
-      }),
-    );
+      movedPaths.push([
+        _prev.slice(this.workspace.length),
+        _new.slice(this.workspace.length),
+      ]);
+
+      cursor.continue();
+    }
     return movedPaths;
   }
 
@@ -216,18 +212,18 @@ export default class IdbFile {
    * @param path
    * @param file
    */
-  putFile(path, file, distFile = null) {
-    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.only(this.workspace + path),
-        forEach(value, cursor) {
-          value.file = file;
-          value.distFile = distFile;
-          cursor.update(value);
-        },
-      }),
-    );
+  async putFile(path, file, distFile = null) {
+    for await (const cursor of this.fileStore
+      .index('path')
+      .openCursor(IDBKeyRange.only(this.workspace + path))) {
+      const fileData = cursor.value;
+
+      fileData.file = file;
+      fileData.distFile = distFile;
+      cursor.update(fileData);
+
+      cursor.continue();
+    }
   }
 
   /**
@@ -236,9 +232,9 @@ export default class IdbFile {
    * @return file
    */
   async getFile(path, isSrc = false) {
-    const result = await idb.tx(this.dbSchema, ['files'], 'readonly', (tx) =>
-      idb.get(tx.objectStore('files').index('path'), this.workspace + path),
-    );
+    const result = await this.fileStore
+      .index('path')
+      .get(this.workspace + path);
     return (!isSrc && result?.distFile) || result?.file;
   }
 
@@ -246,17 +242,17 @@ export default class IdbFile {
    * ワークスペースの設定を保存する
    * @param setting
    */
-  putWorkSpaceSetting(setting) {
-    return idb.tx(this.dbSchema, ['files'], 'readwrite', (tx) =>
-      idb.cursor({
-        index: tx.objectStore('files').index('path'),
-        range: IDBKeyRange.only(this.workspace.slice(0, -1)),
-        forEach(value, cursor) {
-          value.setting = setting;
-          cursor.update(value);
-        },
-      }),
-    );
+  async putWorkSpaceSetting(setting) {
+    for await (const cursor of this.fileStore
+      .index('path')
+      .openCursor(IDBKeyRange.only(this.workspace.slice(0, -1)))) {
+      const fileData = cursor.value;
+
+      fileData.setting = setting;
+      cursor.update(fileData);
+
+      cursor.continue();
+    }
   }
 
   /**
@@ -264,12 +260,9 @@ export default class IdbFile {
    * @return setting
    */
   async getWorkSpaceSetting() {
-    const project = await idb.tx(this.dbSchema, ['files'], 'readonly', (tx) =>
-      idb.get(
-        tx.objectStore('files').index('path'),
-        this.workspace.slice(0, -1),
-      ),
-    );
+    const project = await this.fileStore
+      .index('path')
+      .get(this.workspace.slice(0, -1));
     return this.createDefaultSetting(project?.setting);
   }
 

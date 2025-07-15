@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
+    "@haiix/idb": "^0.1.0",
     "@haiix/tcomponent": "0.2.6",
     "@zip.js/zip.js": "^2.7.63",
     "css-loader": "^7.1.2",
