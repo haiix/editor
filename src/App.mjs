@@ -874,7 +874,10 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
         this.editorModels[_old].dispose();
         delete this.editorModels[_old];
 
-        this.editorModels[_new] = this.createEditorModel(_new, fileData.file);
+        this.editorModels[_new] = await this.createEditorModel(
+          _new,
+          fileData.file,
+        );
         const tab = this.tabs.childNodes.find((tab) => tab.value === _old);
         if (tab) {
           this.initEditorTab(tab, this.editorModels[_new]);
