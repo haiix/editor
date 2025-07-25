@@ -135,7 +135,7 @@ export default class IdbFile {
     const removedPaths = [];
     for await (const cursor of this.fileStore
       .index('path')
-      .cursor(IDBKeyRange.lowerBound(this.workspace + path))) {
+      .openCursor(IDBKeyRange.lowerBound(this.workspace + path))) {
       const fileData = cursor.value;
       if (!`${fileData.path}/`.startsWith(`${this.workspace}${path}/`)) break;
 
