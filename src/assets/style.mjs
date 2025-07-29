@@ -1,8 +1,18 @@
 export class Style {
+  /**
+   * @type {string[]} src
+   */
   src = [];
   requested = false;
+  /**
+   * @type {HTMLStyleElement | null} styleElement
+   */
   styleElement = null;
 
+  /**
+   * スタイル追加
+   * @param {string} value
+   */
   add(value) {
     this.src.push(value);
     if (this.requested) return;
@@ -13,6 +23,9 @@ export class Style {
     });
   }
 
+  /**
+   * スタイル適用
+   */
   apply() {
     if (!this.src.length) return;
 
@@ -30,6 +43,11 @@ export class Style {
 }
 
 const instance = new Style();
+
+/**
+ * スタイル設定
+ * @param {string} value
+ */
 export default function style(value) {
   instance.add(value);
 }

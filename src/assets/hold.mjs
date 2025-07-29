@@ -2,6 +2,22 @@ const overlay = document.createElement('div');
 overlay.style.position = 'fixed';
 overlay.style.inset = '0';
 
+/**
+ * @typedef {{
+ *   container?: HTMLElement;
+ *   ondragstart?: (x: number, y: number, overlay: HTMLElement) => void;
+ *   ondrag?: (x: number, y: number, overlay: HTMLElement) => void;
+ *   ondragend?: (x: number, y: number, overlay: HTMLElement) => void;
+ *   onerror?: (error: unknown) => void;
+ *   cursor?: string;
+ * }} HoldParams
+ */
+
+/**
+ * マウスイベントから画面上の座標を取得する
+ * @param {MouseEvent} event
+ * @returns {{ x:number, y:number }}
+ */
 export function getPageCoordinate(event) {
   if (event instanceof TouchEvent) {
     return {
@@ -12,15 +28,26 @@ export function getPageCoordinate(event) {
   return { x: event.pageX, y: event.pageY };
 }
 
+/**
+ * ホールド状態管理クラス
+ */
 class HoldController {
   params;
   point = { x: 0, y: 0 };
   dragStarted = false;
 
+  /**
+   * コンストラクター
+   * @param {HoldParams} params
+   */
   constructor(params) {
     this.params = params;
   }
 
+  /**
+   * 非同期/同期コールバックを呼び出し、Errorをキャッチする
+   * @param {((x: number, y: number, overlay: HTMLElement) => unknown) | undefined} callback
+   */
   callback(callback) {
     if (!callback) return;
 
@@ -38,10 +65,18 @@ class HoldController {
     }
   }
 
+  /**
+   * マウスダウンイベント
+   * @param {MouseEvent} event
+   */
   handleMouseDown(event) {
     this.point = getPageCoordinate(event);
   }
 
+  /**
+   * マウス移動イベント
+   * @param {MouseEvent} event
+   */
   handleMouseMove(event) {
     const point = getPageCoordinate(event);
     if (point.x === this.point.x && point.y === this.point.y) return;
@@ -57,6 +92,10 @@ class HoldController {
     this.callback(this.params.ondrag);
   }
 
+  /**
+   * マウスアップイベント
+   * @param {MouseEvent} event
+   */
   handleMouseUp(event) {
     overlay.remove();
     overlay.style.cursor = '';
@@ -65,26 +104,47 @@ class HoldController {
   }
 }
 
+/**
+ * マウスドラッグヘルパー
+ * @param {HoldParams} params
+ */
 export function hold(params) {
   const controller = new HoldController(params);
 
+  /**
+   * マウスダウンイベント
+   * @param {MouseEvent} event
+   */
   const handleMouseDown = (event) => {
     event.preventDefault();
     controller.handleMouseDown(event);
   };
+
+  /**
+   * マウス移動イベント
+   * @param {MouseEvent} event
+   */
+
   const handleMouseMove = (event) => {
     event.preventDefault();
     controller.handleMouseMove(event);
   };
+
+  /**
+   * マウスアップイベント
+   * @param {MouseEvent} event
+   */
   const handleMouseUp = (event) => {
     event.preventDefault();
-    // eslint-disable-next-line no-use-before-define
     for (const handler of handlers) {
       removeEventListener(handler.type, handler.listener);
     }
     controller.handleMouseUp(event);
   };
 
+  /**
+   * @type {{ type: string, listener: (event: any) => void }[]}
+   */
   const handlers = [
     { type: 'touchstart', listener: handleMouseDown },
     { type: 'touchmove', listener: handleMouseMove },

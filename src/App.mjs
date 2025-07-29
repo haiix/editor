@@ -2,29 +2,17 @@ import './MaterialIcons.mjs';
 import * as styleDef from './assets/styledef.mjs';
 import TDialog, { alert, confirm, prompt } from './assets/ui/TDialog.mjs';
 import { ancestorNodes, getIncludingChild, sleep } from './util.mjs';
-import EditorTab from './EditorTab.mjs';
+import { FileManager } from './editor/FileManager.mjs';
 import FileTree from './FileTree.mjs';
 import IdbFile from './IdbFile.mjs';
 import TElement from './assets/ui/TElement.mjs';
 import TList from './assets/ui/TList.mjs';
 import TSplitter from './assets/ui/TSplitter.mjs';
+import { TabViewManager } from './editor/TabViewManager.mjs';
 import { createContextMenu } from './menu.mjs';
 import hold from './assets/hold.mjs';
 import style from './assets/style.mjs';
-
-const tsCompilerOptions = {
-  module: 99, // monaco.languages.typescript.ModuleKind.ESNext
-  target: 99, // monaco.languages.typescript.ScriptTarget.ESNext
-  jsx: 2, // monaco.languages.typescript.JsxEmit.React
-  strict: true,
-  noUncheckedIndexedAccess: true, // 配列のインデックスアクセスを厳密にチェックする
-  // inlineSourceMap: true,
-  // sourceMap: true
-  allowJs: true,
-  checkJs: true,
-  allowImportingTsExtensions: true,
-  experimentalDecorators: true,
-};
+import { transpile } from './typescript-base.mjs';
 
 const ukey = 'my-app';
 style(styleDef.ui);
@@ -120,8 +108,15 @@ style(`
   position: relative;
   z-index: 0;
 }
-.${ukey} .views > li:not(.editor-view) {
+.${ukey} .views > li > div {
+  min-width: 100%;
+  min-height: 100%;
+}
+/*.${ukey} .views > li:not(.editor-view) {
   overflow: auto;
+}*/
+.${ukey} .views > li {
+  overflow: hidden;
 }
 .${ukey} .views > li.current {
   display: inline-block;
@@ -189,13 +184,7 @@ export default class App extends TElement {
               <p>左のツリーからファイルを選択し、Enterキー、ダブルクリック、またはこのエリアへドラッグ&ドロップしてファイルを開いてください。</p>
             </t-list-item>
             <!-- タブとエディタ -->
-            <t-list-item id="tabViews" class="flex column fit tab-views">
-              <t-list id="tabs" class="editor-tabs flex row"
-                onchange="return this.handleTabChange(event)"
-                onmousedown="return this.handleTabMouseDown(event)"
-              ></t-list>
-              <t-list id="views" class="views flex fit row"></t-list>
-            </t-list-item>
+            <t-list-item id="tabViews" class="flex column fit tab-views" />
           </t-list>
 
           <t-splitter position="right" ondrag="return this.handleDragSplitter(event)" />
@@ -230,22 +219,37 @@ export default class App extends TElement {
     this.idbFile = new IdbFile(this.namespace);
 
     this.projectSetting = null;
-    this.refreshingMonacoView = null;
     this.serviceWorkerRegistration = null;
-    this.editorModels = Object.create(null);
+
+    this.tabViewManager = new TabViewManager(() => {
+      this.saveTabs();
+      if (this.tabViewManager.tabViews.length === 0) {
+        this.mainArea.current = this.mainAreaEmpty;
+      }
+    });
+    this.tabViewManager.tabs.setAttribute('class', 'editor-tabs flex row');
+    this.tabViewManager.views.setAttribute('class', 'views flex fit row');
+    this.tabViews.element.append(
+      this.tabViewManager.tabs,
+      this.tabViewManager.views,
+    );
+
+    this.fileManeger = new FileManager(this.tabViewManager.handleEditorChange);
   }
 
   /**
    * 画面表示前処理
    */
   async init() {
-    window.addEventListener('beforeunload', this.handleClose.bind(this));
-    window.addEventListener('resize', this.resizeEditor.bind(this));
+    window.addEventListener('beforeunload', this.handleCloseWindow.bind(this));
+    window.addEventListener(
+      'resize',
+      this.tabViewManager.resizeEditor.bind(this.tabViewManager),
+    );
 
     const [serviceWorkerRegistration] = await Promise.all([
       this.registerServiceWorker(),
       this.restoreWorkpace(),
-      this.initMonaco(),
     ]);
 
     this.serviceWorkerRegistration = serviceWorkerRegistration;
@@ -270,28 +274,12 @@ export default class App extends TElement {
   }
 
   /**
-   * Monaco Editorの設定
-   */
-  async initMonaco() {
-    this.monaco = await import(
-      /* webpackPrefetch: true */ 'monaco-editor/esm/vs/editor/editor.api.js'
-    );
-    this.monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-    this.monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
-      tsCompilerOptions,
-    );
-  }
-
-  /**
    * 画面表示後処理
    */
   async main() {
-    this.typescript = await import(/* webpackPrefetch: true */ 'typescript');
     if (await this.idbFile.initialized()) {
-      await Promise.all([
-        this.refreshFileTreeAndCreateModels(),
-        this.restoreTabs(),
-      ]);
+      await this.refreshFileTreeAndCreateModels();
+      await this.restoreTabs();
     } else {
       // WorkSpace作成
       await this.idbFile.initWorkSpaces();
@@ -299,7 +287,7 @@ export default class App extends TElement {
     }
   }
 
-  handleClose() {
+  handleCloseWindow() {
     window.localStorage.setItem('lastWorkSpace', this.idbFile.workspace);
     if (this.debugWindow && !this.debugWindow.closed) {
       this.debugWindow.close();
@@ -321,7 +309,7 @@ export default class App extends TElement {
     this.fileTree.update(folders, files);
 
     this.refreshFileTreeArea();
-    await this.createEditorModels(files);
+    await this.addFileManeger(files);
   }
 
   /**
@@ -330,39 +318,23 @@ export default class App extends TElement {
   async addFile(...fileDataList) {
     // TypeScript
     for (const fileData of fileDataList) {
-      const tsFile = await this.tsTranspile(fileData.path, fileData.file);
+      const tsFile = transpile(fileData.path, await fileData.file.text());
       if (tsFile != null) {
         fileData.distFile = tsFile;
       }
     }
 
-    this.createEditorModels(fileDataList);
+    await this.addFileManeger(fileDataList);
 
     await this.idbFile.addFiles(fileDataList);
     this.fileTree.addFile(fileDataList);
     this.sideArea.current = this.fileTreeArea;
   }
 
-  async createEditorModels(files) {
-    // モデル作成
-    const models = await Promise.all(
-      files
-        .filter(
-          (file) =>
-            file.path.endsWith('.ts') ||
-            file.path.endsWith('.tsx') ||
-            file.path.endsWith('.js') ||
-            file.path.endsWith('.jsx') ||
-            file.path.endsWith('.cjs') ||
-            file.path.endsWith('.mjs'),
-        )
-        .map((file) => this.createEditorModel(file.path, file.file)),
+  async addFileManeger(files) {
+    await Promise.all(
+      files.map((file) => this.fileManeger.add(file.path, file.file)),
     );
-    // モデルのパスを解決した状態で表示を更新する
-    for (const model of models) {
-      // model.setValue(model.getValue())
-      this.refreshMonacoView(model);
-    }
   }
 
   /**
@@ -375,14 +347,8 @@ export default class App extends TElement {
 
     for (const removedPath of removedPaths) {
       // Monaco Editorのモデルを破棄する
-      if (this.editorModels[removedPath]) {
-        this.editorModels[removedPath].dispose();
-        delete this.editorModels[removedPath];
-      }
-
-      // タブが開いている場合は閉じる
-      const tab = this.tabs.get(removedPath);
-      if (tab) await this.closeTabs([tab]);
+      this.tabViewManager.close(removedPath);
+      this.fileManeger.remove(removedPath);
     }
 
     this.fileTree.remove(path);
@@ -390,145 +356,25 @@ export default class App extends TElement {
   }
 
   /**
-   * IDBからファイルをロードして、タブとエディタを追加する
+   * タブとエディタを追加する
    */
   async openTab(path, toSave = true) {
-    if (this.tabs.get(path) == null) {
-      // IDBからロード
-      const file = await this.idbFile.getFile(path, true);
-      if (file != null) {
-        const view = new TList.Item({ value: path });
-        const tab = new EditorTab({ view, path, file });
-
-        this.openMediaTab(view, tab, file, path);
-
-        this.tabs.appendChild(tab);
-        this.views.appendChild(view);
-      }
-    }
+    this.tabViewManager.open(this.fileManeger.get(path));
 
     if (toSave) {
-      this.tabs.value = path;
       this.mainArea.current = this.tabViews;
       await this.saveTabs();
     }
-  }
-
-  async openMediaTab(view, tab, file, path) {
-    if (file.type.startsWith('image/')) {
-      // 画像
-      const image = new Image();
-      image.src = URL.createObjectURL(file); // TODO close時にrevoke
-      image.alt = path;
-      image.onmousedown = (event) => event.preventDefault();
-      view.appendChild(image);
-    } else if (file.type.startsWith('audio/')) {
-      // 音声
-      const audio = new Audio();
-      audio.controls = true;
-      audio.src = URL.createObjectURL(file); // TODO close時にrevoke
-      view.appendChild(audio);
-    } else if (file.type.startsWith('video/')) {
-      // 動画
-      const video = document.createElement('video');
-      video.controls = true;
-      video.src = URL.createObjectURL(file); // TODO close時にrevoke
-      view.appendChild(video);
-    } else if (file.type === 'application/pdf') {
-      const iframe = document.createElement('iframe');
-      iframe.title = path;
-      iframe.src = URL.createObjectURL(file); // TODO close時にrevoke
-      view.appendChild(iframe);
-    } else {
-      await this.initEditorTab(tab, path);
-      tab.editor.focus();
-      view.classList.add('editor-view'); // ツールチップが隠れないようにする
-    }
-  }
-
-  /**
-   * ファイルロードのうち、Monaco Editor初期化部分
-   */
-  async initEditorTab(tab, path) {
-    const model = await this.createEditorModel(path, tab.file);
-
-    // JavaScriptは createModel()のlanguageに'typescript'、
-    // create()のlanguageに'javascript'をセットするとeditorで認識されるらしい(?)
-    // (参考) https://github.com/microsoft/monaco-editor/issues/989
-
-    // Editor
-    tab.editor = this.monaco.editor.create(tab.view.element, {
-      model,
-      minimap: { enabled: false },
-      language: tab.file.type.includes('javascript') ? 'javascript' : null,
-    });
-    tab.editor.getModel().onDidChangeContent(() => {
-      // console.log('editor onchange')
-      if (model !== this.refreshingMonacoView) {
-        if (this.tabs.current) this.tabs.current.isModified = true;
-      }
-    });
-  }
-
-  async createEditorModel(path, file) {
-    if (!this.editorModels[path]) {
-      this.editorModels[path] = await (async () => {
-        const model = this.monaco.editor.createModel(
-          await file.text(),
-          file.type.includes('typescript') || file.type.includes('javascript')
-            ? 'typescript'
-            : file.type,
-          this.monaco.Uri.parse(
-            `${this.base}debug/${this.idbFile.workspace}${path}`,
-          ),
-        );
-        model.updateOptions({ tabSize: 2 });
-        this.editorModels[path] = model;
-        return model;
-      })();
-    }
-    return this.editorModels[path];
-  }
-
-  /**
-   * エディターリサイズ
-   */
-  resizeEditor() {
-    const item = this.tabs.current;
-    if (!item || !item.editor) return;
-    // 一度縮めてやり直さないとなぜか縮小がうまくいかない
-    item.view.style = 'width: 0; height: 0;';
-    item.editor.layout();
-    item.view.style = 'width: 100%; height: 100%;';
-    item.editor.layout();
-  }
-
-  /**
-   * タブを閉じる
-   */
-  async closeTabs(tabs, toSave = true) {
-    let elem = this.tabs.current;
-    for (const tab of [...tabs]) {
-      // 要素削除のためiteratorを配列に複製しておく
-      if (tab === this.tabs.current) {
-        elem = tab.previousSibling ?? tab.nextSibling;
-      }
-      this.tabs.removeChild(tab);
-      this.views.removeChild(tab.view);
-    }
-    this.tabs.value = elem?.value;
-    if (this.tabs.childElementCount === 0) {
-      this.mainArea.current = this.mainAreaEmpty;
-    }
-    if (toSave) await this.saveTabs();
   }
 
   /**
    * 現在開いているタブをIDBに保存する
    */
   async saveTabs() {
-    this.projectSetting.tabs = [...this.tabs].map((tab) => tab.path);
-    this.projectSetting.currentTab = this.tabs.current?.path;
+    this.projectSetting.tabs = this.tabViewManager.tabViews.map(
+      (tabView) => tabView.path,
+    );
+    this.projectSetting.currentTab = this.tabViewManager.current.path;
     await this.idbFile.putWorkSpaceSetting(this.projectSetting);
   }
 
@@ -549,34 +395,24 @@ export default class App extends TElement {
   /**
    * エディターの内容をIDBに保存する
    */
-  async saveTab(...tabs) {
-    for (const tab of tabs) {
-      if (!tab.isModified) continue;
+  saveTabView(...tabViews) {
+    return Promise.all(
+      tabViews.map(async (tabView) => {
+        if (!tabView.isModified()) return;
 
-      const path = tab.path;
-      const file = new Blob([tab.editor.getValue()], {
-        type: this.idbFile.getFileType(tab.value),
-      });
+        const editorContent = tabView.editor.getValue();
 
-      // TypeScript
-      const distFile = await this.tsTranspile(
-        path,
-        file,
-        tab.editor.getValue(),
-      );
+        const path = tabView.path;
+        const file = new Blob([editorContent]);
 
-      // 保存
-      await this.idbFile.putFile(path, file, distFile);
-      tab.isModified = false;
-    }
-  }
+        // TypeScript
+        const distFile = transpile(path, editorContent);
 
-  async tsTranspile(path, file, code = null) {
-    if (!path.endsWith('.ts') && !path.endsWith('.tsx')) return null;
-    let textCode = code;
-    if (textCode == null) textCode = await file.text();
-    const result = this.typescript.transpile(textCode, tsCompilerOptions);
-    return new Blob([result], { type: this.idbFile.getFileType('.js') });
+        // 保存
+        await this.idbFile.putFile(path, file, distFile);
+        tabView.clearModified();
+      }),
+    );
   }
 
   handleDragOver(event) {
@@ -586,7 +422,7 @@ export default class App extends TElement {
   handleDrop(event) {
     event.preventDefault();
     return this.addFile(
-      [...event.dataTransfer.files].map((file) => {
+      ...[...event.dataTransfer.files].map((file) => {
         const type = this.idbFile.getFileType(file.name) ?? file.type; // .tsファイルがブラウザ依存にならないようにする
         return { path: file.name, file: new Blob([file], { type }) };
       }),
@@ -599,7 +435,7 @@ export default class App extends TElement {
       case 83: // s
         if (event.ctrlKey) {
           event.preventDefault();
-          return this.saveTab(this.tabs.current);
+          return this.saveTabView(this.tabViewManager.current);
         }
         break;
       case 116: // F5
@@ -846,10 +682,10 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
   /**
    * ファイル移動・リネーム
    */
-  async fileListMove(oldPath, newPath) {
-    if (oldPath === newPath) return;
+  async fileListMove(fromPath, toPath) {
+    if (fromPath === toPath) return;
 
-    if (`${newPath}/`.startsWith(`${oldPath}/`)) {
+    if (`${toPath}/`.startsWith(`${fromPath}/`)) {
       await alert(
         '受け側のフォルダーは、送り側フォルダーのサブフォルダーです。',
         '中断',
@@ -858,7 +694,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     }
 
     // 受け側のフォルダーに同名のファイルまたはフォルダーがある場合は中断
-    if (await this.idbFile.getFile(newPath)) {
+    if (await this.idbFile.getFile(toPath)) {
       await alert(
         '受け側のフォルダーに同名のファイルまたはフォルダーがあります。',
         '中断',
@@ -866,31 +702,19 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       return;
     }
 
-    const movedPaths = await this.idbFile.moveFile(oldPath, newPath);
+    // IDB更新
+    const movedPaths = await this.idbFile.moveFile(fromPath, toPath);
 
-    for (const [_old, _new, fileData] of movedPaths) {
-      // Monaco Editorのモデルを作り直す
-      if (this.editorModels[_old]) {
-        this.editorModels[_old].dispose();
-        delete this.editorModels[_old];
-
-        this.editorModels[_new] = await this.createEditorModel(
-          _new,
-          fileData.file,
-        );
-        const tab = this.tabs.childNodes.find((tab) => tab.value === _old);
-        if (tab) {
-          this.initEditorTab(tab, this.editorModels[_new]);
-        }
-      }
-
-      // タブのパスを更新
-      const tab = this.tabs.get(_old);
-      if (tab) tab.path = _new;
-      await this.saveTabs();
+    // タブ更新
+    for (const [fromFilePath, toFilePath] of movedPaths) {
+      this.tabViewManager.rename(fromFilePath, toFilePath, () =>
+        this.fileManeger.rename(fromFilePath, toFilePath),
+      );
     }
+    await this.saveTabs();
 
-    this.fileTree.move(oldPath, newPath);
+    //ツリー更新
+    this.fileTree.move(fromPath, toPath);
   }
 
   handleFileTreeMouseDown(event) {
@@ -1026,79 +850,8 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     this.refreshingMonacoView = null;
   }
 
-  handleTabChange() {
-    const tab = this.tabs.current;
-    if (tab) {
-      this.views.value = tab.path;
-      this.refreshMonacoView(this.editorModels[tab.path]);
-      document.title = `${tab.path} - ${this.name}`;
-      if (!tab.editor) return; // Editor以外 (画像等)
-      requestAnimationFrame(() => {
-        this.resizeEditor();
-        tab.editor.focus();
-      });
-    } else {
-      document.title = this.name;
-    }
-  }
-
-  async handleTabMouseDown(event) {
-    if (event.type === 'mousedown' && event.button !== 0) return;
-    // 閉じるボタン
-    if (event.target.classList.contains('close-button')) {
-      event.preventDefault();
-      await this.closeTabs([TElement.from(event.target.parentElement)]);
-      return;
-    }
-    // タブの入れ替え
-    let rects;
-    let idx;
-    let currTab;
-    const updateRects = () => {
-      rects = null;
-      requestAnimationFrame(() => {
-        rects = [...this.tabs].map((tab, _idx) => ({
-          idx: _idx,
-          tab,
-          rect: tab.element.getBoundingClientRect(),
-        }));
-        idx = [...this.tabs].indexOf(this.tabs.current);
-      });
-    };
-    updateRects();
-    hold({
-      ondrag: (px, py) => {
-        if (!rects) return;
-        const target = rects.find(
-          (r) =>
-            px >= r.rect.left &&
-            px < r.rect.right &&
-            py >= r.rect.top &&
-            py < r.rect.bottom,
-        );
-        if (target == null || target === this.tabs.current) {
-          currTab = null;
-          return;
-        }
-        if (currTab === target.tab) return;
-        currTab = target.tab;
-        this.tabs.insertBefore(
-          this.tabs.current,
-          target.idx < idx ? target.tab : target.tab.nextSibling,
-        );
-        updateRects();
-      },
-      ondragend: () => {
-        this.saveTabs();
-      },
-      onerror: (error) => {
-        this.onerror(error);
-      },
-    });
-  }
-
   handleDragSplitter() {
-    this.resizeEditor();
+    this.tabViewManager.resizeEditor();
   }
 
   handleMenuMouseDown(event) {
@@ -1173,24 +926,15 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     if (this.idbFile.workspace === `${workspace.path}/`) return;
 
     // 現在のプロジェクトを閉じる
-    if (this.tabs.childElementCount > 0) {
-      await this.closeTabs(this.tabs, false);
-      this.mainArea.current = this.mainAreaLoading;
-    }
-    this.disposeCurrentProject();
+    this.tabViewManager.closeAll();
+    this.mainArea.current = this.mainAreaLoading;
+    this.fileManeger.removeAll();
 
     // 読み込み
     this.projectSetting = workspace.setting;
     this.idbFile.workspace = `${workspace.path}/`;
     await this.refreshFileTreeAndCreateModels();
     await this.restoreTabs();
-  }
-
-  disposeCurrentProject() {
-    // Monaco Editorのモデルを破棄する
-    // this.monaco.editor.getModels().forEach(model => model.dispose())
-    Object.values(this.editorModels).forEach((model) => model.dispose());
-    this.editorModels = Object.create(null);
   }
 
   /**
@@ -1249,7 +993,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
    */
   async run(event) {
     // 実行前に保存
-    await Promise.all([...this.tabs].map((tab) => this.saveTab(tab)));
+    await this.saveTabView(...this.tabViewManager.tabViews);
 
     if ([...this.fileTree].every((item) => item.text !== 'index.html')) {
       await alert('"index.html" が無いため実行できません');
@@ -1285,7 +1029,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     console.clear();
     if (this.previewArea.style.width === '0px') {
       this.previewArea.style.width = '300px';
-      this.resizeEditor();
+      this.tabViewManager.resizeEditor();
     }
     this.previewFrame.src = `${this.base}debug/${this.idbFile.workspace}`;
   }
@@ -1297,7 +1041,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     this.previewFrame.src = 'about:blank';
     if (this.previewArea.style.width !== '0px') {
       this.previewArea.style.width = '0px';
-      this.resizeEditor();
+      this.tabViewManager.resizeEditor();
     }
   }
 
@@ -1325,9 +1069,10 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
    */
   async newProject(updateSetting = true) {
     // タブをすべて閉じる
-    await this.closeTabs(this.tabs, false);
-    this.disposeCurrentProject();
+    this.tabViewManager.closeAll();
+    this.mainArea.current = this.mainAreaEmpty;
     // 現在のファイルリストを削除
+    this.fileManeger.removeAll();
     this.idbFile.removeAllFiles();
     // ツリーを空にする
     this.fileTree.textContent = '';
