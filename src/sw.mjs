@@ -1,4 +1,3 @@
-/* global __BUILD_TIMESTAMP__ */
 import * as idb from '@haiix/idb';
 
 class Main {
@@ -26,22 +25,24 @@ class Main {
             `${base}dist/77.js`,
             `${base}dist/100.js`,
             `${base}dist/180.js`,
+            `${base}dist/349.js`,
             `${base}dist/355.js`,
             `${base}dist/392.js`,
             `${base}dist/394.js`,
             `${base}dist/550.js`,
-            `${base}dist/569.js`,
             `${base}dist/614.js`,
             `${base}dist/628.js`,
             `${base}dist/658.js`,
             `${base}dist/745.js`,
             `${base}dist/830.js`,
+            `${base}dist/839.js`,
             `${base}dist/843.js`,
             `${base}dist/958.js`,
             `${base}dist/css.worker.js`,
             `${base}dist/editor.worker.js`,
             `${base}dist/f6283f7ccaed1249d9eb.ttf`,
             `${base}dist/html.worker.js`,
+            `${base}dist/json.worker.js`,
             `${base}dist/main.js`,
             `${base}dist/ts.worker.js`,
             `${base}resources/app.webmanifest`,

@@ -203,7 +203,7 @@ export default class App extends TElement {
   constructor() {
     super();
     this.name = document.title;
-    this.version = '0.1.0';
+    this.version = __BUILD_TIMESTAMP__;
     // TODO DB定義をService Workerと共通化
     this.namespace = location.pathname.slice(
       1,

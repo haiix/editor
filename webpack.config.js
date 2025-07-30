@@ -32,7 +32,7 @@ module.exports = {
       __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
     }),
     new MonacoWebpackPlugin({
-      languages: ['typescript', 'javascript', 'html', 'css'],
+      languages: ['css', 'html', 'javascript', 'json', 'typescript'],
     }),
   ],
 };
