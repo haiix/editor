@@ -112,12 +112,6 @@ style(`
   min-width: 100%;
   min-height: 100%;
 }
-/*.${ukey} .views > li:not(.editor-view) {
-  overflow: auto;
-}*/
-.${ukey} .views > li {
-  overflow: hidden;
-}
 .${ukey} .views > li.current {
   display: inline-block;
 }
