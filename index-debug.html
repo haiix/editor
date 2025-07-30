@@ -24,6 +24,7 @@
         'vs/editor/editor.main',
         './node_modules/typescript/lib/typescript.js',
       ], () => {
+        window.__BUILD_TIMESTAMP__ = new Date().toISOString();
         import('./src/index.mjs').catch((error) => {
           document.body.textContent = error?.stack ?? error;
           throw error;
