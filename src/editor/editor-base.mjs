@@ -1,3 +1,4 @@
+// @ts-check
 import { options } from '../typescript-base.mjs';
 
 /**
@@ -16,8 +17,8 @@ export async function init() {
  * モデル生成
  * @param {string} path
  * @param {string} content
- * @param {(event: monaco.editor.IModelContentChangedEvent) => void} onChange
- * @returns {monaco.editor.ITextModel}
+ * @param {(event: import("monaco-editor").editor.IModelContentChangedEvent) => void} onChange
+ * @returns {import("monaco-editor").editor.ITextModel}
  */
 export function createModel(path, content, onChange) {
   const model = monaco.editor.createModel(
@@ -33,8 +34,8 @@ export function createModel(path, content, onChange) {
 /**
  * エディタ生成
  * @param {HTMLElement} container
- * @param {monaco.editor.ITextModel} model
- * @returns {monaco.editor.IStandaloneCodeEditor}
+ * @param {import("monaco-editor").editor.ITextModel} model
+ * @returns {import("monaco-editor").editor.IStandaloneCodeEditor}
  */
 export function createEditor(container, model) {
   const element = document.createElement('div');
@@ -49,7 +50,7 @@ export function createEditor(container, model) {
 
 /**
  * エディター破棄
- * @param {monaco.editor.IStandaloneCodeEditor} editor
+ * @param {import("monaco-editor").editor.IStandaloneCodeEditor} editor
  */
 export function disposeEditor(editor) {
   editor.getContainerDomNode().remove();
@@ -58,7 +59,7 @@ export function disposeEditor(editor) {
 
 /**
  * モデル破棄
- * @param {monaco.editor.ITextModel} model
+ * @param {import("monaco-editor").editor.ITextModel} model
  */
 export function disposeModel(model) {
   model.dispose();
@@ -66,7 +67,7 @@ export function disposeModel(model) {
 
 /**
  * エディターの状態を更新する
- * @param {monaco.editor.ITextModel} model
+ * @param {import("monaco-editor").editor.ITextModel} model
  */
 export function refresh(model) {
   // undo/redoを消さずにimportを更新

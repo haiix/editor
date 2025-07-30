@@ -1,3 +1,4 @@
+// @ts-check
 import { createModel, disposeModel } from './editor-base.mjs';
 
 /**
@@ -104,13 +105,12 @@ export class FileManager {
   /**
    * ファイルを管理リストから削除する
    * @param {string} path
-   * @returns {FileContent}
+   * @returns {FileContent | null}
    */
   remove(path) {
     const index = this.contents.findIndex((content) => content.path === path);
-    if (index === -1) {
-      throw new Error(`File not found: ${path}`);
-    }
+    if (index === -1) return null;
+
     const content = /** @type {FileContent} */ (
       this.contents.splice(index, 1)[0]
     );
@@ -136,12 +136,13 @@ export class FileManager {
    * ファイルのパスを変更する
    * @param {string} fromPath
    * @param {string} toPath
-   * @returns {Promise<FileContent>}
+   * @returns {Promise<FileContent | null>}
    */
   async rename(fromPath, toPath) {
     const contentValue = this.get(fromPath)?.model?.getValue();
 
     const oldContent = this.remove(fromPath);
+    if (!oldContent) return null;
     const newContent = new FileContent(toPath, oldContent.blob);
     this.contents.push(newContent);
 

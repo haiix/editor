@@ -1,3 +1,4 @@
+// @ts-check
 export class Style {
   /**
    * @type {string[]} src

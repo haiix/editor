@@ -33,13 +33,13 @@ export default defineConfig([
       'max-classes-per-file': 'off',
       'max-lines': 'off',
       'max-params': ['error', 5],
-      'max-statements': ['error', 30],
+      //'max-statements': ['error', 30],
 
-      'no-underscore-dangle': 'off', // Temporarily disabled
       'max-lines-per-function': 'off', // Temporarily disabled
+      'max-statements': 'off', // Temporarily disabled
 
       'no-await-in-loop': 'warn',
-      'no-bitwise': 'error',
+      'no-bitwise': 'warn',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-continue': 'off',
       'no-eq-null': 'off', // Conflicts with eqeqeq:smart
@@ -59,6 +59,7 @@ export default defineConfig([
         },
       ],
       'no-ternary': 'off', // no-nested-ternary is still enabled
+      'no-use-before-define': 'off', // Should use @typescript-eslint/no-use-before-define
       'no-warning-comments': 'warn',
       'one-var': ['error', 'never'],
       'prefer-destructuring': 'off',
@@ -66,6 +67,21 @@ export default defineConfig([
       radix: ['error', 'as-needed'],
       'sort-keys': 'off',
       'sort-vars': 'off',
+
+      //"@typescript-eslint/no-use-before-define": "warn",
+      '@typescript-eslint/no-non-null-assertion': 'off', // Conflicts with @typescript-eslint/non-nullable-type-assertion-style
+      '@typescript-eslint/prefer-promise-reject-errors': 'off', // Duplicate @typescript-eslint/only-throw-error
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        {
+          allowAny: false,
+          allowBoolean: false,
+          allowNever: false,
+          allowNullish: false,
+          allowNumber: true,
+          allowRegExp: false,
+        },
+      ],
     },
   },
   eslintConfigPrettier,

@@ -1,3 +1,4 @@
+// @ts-check
 import { createEditor, disposeEditor, refresh } from './editor-base.mjs';
 import { hold } from '../assets/hold.mjs';
 import style from '../assets/style.mjs';
@@ -389,7 +390,7 @@ export class TabViewManager {
    * パスを変更する
    * @param {string} fromPath
    * @param {string} toPath
-   * @param {() => Promise<FileContent>} rebuildModel
+   * @param {() => Promise<FileContent | null>} rebuildModel
    * @returns {Promise<void>}
    */
   async rename(fromPath, toPath, rebuildModel) {
@@ -405,7 +406,7 @@ export class TabViewManager {
 
       // モデルを作り直す
       const fileContent = await rebuildModel();
-      if (!fileContent.model) {
+      if (!fileContent?.model) {
         throw new Error('モデルが作成できません');
       }
       target.model = fileContent.model;

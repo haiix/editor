@@ -318,6 +318,7 @@ export default class App extends TElement {
   async addFile(...fileDataList) {
     // TypeScript
     for (const fileData of fileDataList) {
+      if (!fileData.file) continue; // フォルダー
       const tsFile = transpile(fileData.path, await fileData.file.text());
       if (tsFile != null) {
         fileData.distFile = tsFile;
@@ -333,7 +334,9 @@ export default class App extends TElement {
 
   async addFileManeger(files) {
     await Promise.all(
-      files.map((file) => this.fileManeger.add(file.path, file.file)),
+      files
+        .filter((file) => file.file) // フォルダー除外
+        .map((file) => this.fileManeger.add(file.path, file.file)),
     );
   }
 
@@ -403,7 +406,8 @@ export default class App extends TElement {
         const editorContent = tabView.editor.getValue();
 
         const path = tabView.path;
-        const file = new Blob([editorContent]);
+        const type = this.idbFile.getFileType(path);
+        const file = new Blob([editorContent], { type });
 
         // TypeScript
         const distFile = transpile(path, editorContent);
@@ -526,7 +530,8 @@ export default class App extends TElement {
             path: 'style.css',
             file: new Blob(
               [
-                `body {
+                `:root {
+  font-family: sans-serif;
 }
 `,
               ],
@@ -815,41 +820,6 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     });
   }
 
-  /**
-   * Monacoエディターのimport解決を更新する
-   */
-  refreshMonacoView(model) {
-    if (model == null) return;
-    this.refreshingMonacoView = model;
-    // console.log('refreshMonacoView start')
-    // TODO: undo/redoを消さずにimportを更新したい。現状エディターの先頭に1文字追加して削除することで解決しているが、正しいやり方を調べる
-    model.applyEdits([
-      {
-        range: {
-          startLineNumber: 1,
-          startColumn: 1,
-          endLineNumber: 1,
-          endColumn: 1,
-        },
-        text: ' ',
-      },
-    ]);
-    model.applyEdits([
-      {
-        range: {
-          startLineNumber: 1,
-          startColumn: 1,
-          endLineNumber: 1,
-          endColumn: 2,
-        },
-        text: null,
-      },
-    ]);
-    // model.setValue(model.getValue())
-    // console.log('refreshMonacoView end')
-    this.refreshingMonacoView = null;
-  }
-
   handleDragSplitter() {
     this.tabViewManager.resizeEditor();
   }
@@ -1008,17 +978,6 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     } else {
       this.handlePreviewRefresh(event);
     }
-
-    /* if (this.debugWindow && !this.debugWindow.closed) {
-      await this.debugWindow.fetch(this.base + 'resources/blank.txt') // not foundになることがあるので対策
-      this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
-    } else {
-      this.debugWindow = window.open(this.base + 'resources/blank.txt', 'appWindow', 'width=400,height=400')
-      this.debugWindow.opener = null
-      this.debugWindow.onload = async function () {
-        this.debugWindow.location.replace(this.base + 'debug/' + this.idbFile.workspace)
-      }.bind(this)
-    } */
   }
 
   /**

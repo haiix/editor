@@ -1,3 +1,4 @@
+// @ts-check
 const overlay = document.createElement('div');
 overlay.style.position = 'fixed';
 overlay.style.inset = '0';
