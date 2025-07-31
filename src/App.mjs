@@ -126,77 +126,77 @@ export default class App extends TElement {
   template() {
     this.uses(FileTree, TSplitter, TList, TList.Item);
     return `
-      <div class="${ukey} fullscreen flex column"
-        ondragover="return this.handleDragOver(event)"
-        ondrop="return this.handleDrop(event)"
-        onkeydown="return this.handleKeyDown(event)"
-        tabindex="-1"
+    <div class="${ukey} fullscreen flex column"
+      ondragover="return this.handleDragOver(event)"
+      ondrop="return this.handleDrop(event)"
+      onkeydown="return this.handleKeyDown(event)"
+      tabindex="-1"
+    >
+      <!-- メニュー -->
+      <ul id="menubar" class="menubar flex row"
+        onmousedown="return this.handleMenuMouseDown(event)"
+        onclick="return this.handleMenuClick(event)"
+        oncontextmenu="event.preventDefault()"
       >
-        <!-- メニュー -->
-        <ul id="menubar" class="menubar flex row"
-          onmousedown="return this.handleMenuMouseDown(event)"
-          onclick="return this.handleMenuClick(event)"
-          oncontextmenu="event.preventDefault()"
+        <li data-key="workspace">ワークスペース▾</li>
+        <li data-key="project">プロジェクト▾</li>
+        <li data-key="run" class="flex row">
+          <i class="material-icons m-icon" style="color: #0A3;">
+            play_circle_outline
+          </i>
+          実行 (F5)
+        </li>
+      </ul>
+
+      <div class="flex row fit">
+        <t-list id="sideArea" class="flex column side-area"
+          oncontextmenu="return this.handleFileTreeContextMenu(event)"
         >
-          <li data-key="workspace">ワークスペース▾</li>
-          <li data-key="project">プロジェクト▾</li>
-          <li data-key="run" class="flex row">
-            <i class="material-icons m-icon" style="color: #0A3;">
-              play_circle_outline
+          <t-list-item id="sideAreaEmpty" class="flex column fit side-area-empty">
+            <p>
+              ファイルツリーが空です。<br />
+              このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
+              <br />
+              <button class="select-template-button" onclick="return this.handleSelectTemplate(event)">ここをクリックして「index.html」を作成することもできます。</button>
+            </p>
+          </t-list-item>
+          <t-list-item id="fileTreeArea" class="flex column fit current">
+            <!-- ファイルリスト -->
+            <file-tree id="fileTree"
+              ondblclick="return this.handleFileTreeDoubleClick(event)"
+              onmousedown="return this.handleFileTreeMouseDown(event)"
+              onkeydown="return this.handleFileTreeKeyDown(event)"
+            />
+          </t-list-item>
+        </t-list>
+        <t-splitter ondrag="return this.handleDragSplitter(event)" />
+
+        <t-list id="mainArea" class="flex column fit main-area">
+          <t-list-item id="mainAreaLoading" class="flex column fit main-area-empty current" style="background: white;">
+          </t-list-item>
+          <t-list-item id="mainAreaEmpty" class="flex column fit main-area-empty">
+            <p>左のツリーからファイルを選択し、Enterキー、ダブルクリック、またはこのエリアへドラッグ&ドロップしてファイルを開いてください。</p>
+          </t-list-item>
+          <!-- タブとエディタ -->
+          <t-list-item id="tabViews" class="flex column fit tab-views" />
+        </t-list>
+
+        <t-splitter position="right" ondrag="return this.handleDragSplitter(event)" />
+        <div id="previewArea" class="flex column" style="width: 0px;">
+          <!-- プレビューエリアのメニュー -->
+          <div id="previewMenu" class="menubar flex row" style="position: relative; overflow: hidden;">
+            <i class="material-icons m-icon" style="color: #333;" onclick="return this.handlePreviewRefresh(event)">
+              refresh
             </i>
-            実行 (F5)
-          </li>
-        </ul>
-
-        <div class="flex row fit">
-          <t-list id="sideArea" class="flex column side-area"
-            oncontextmenu="return this.handleFileTreeContextMenu(event)"
-          >
-            <t-list-item id="sideAreaEmpty" class="flex column fit side-area-empty">
-              <p>
-                ファイルツリーが空です。<br />
-                このエリアで右クリックメニューを開くか、ウィンドウ外からファイルをドロップしてファイルを追加してください。
-                <br />
-                <button class="select-template-button" onclick="return this.handleSelectTemplate(event)">ここをクリックして「index.html」を作成することもできます。</button>
-              </p>
-            </t-list-item>
-            <t-list-item id="fileTreeArea" class="flex column fit current">
-              <!-- ファイルリスト -->
-              <file-tree id="fileTree"
-                ondblclick="return this.handleFileTreeDoubleClick(event)"
-                onmousedown="return this.handleFileTreeMouseDown(event)"
-                onkeydown="return this.handleFileTreeKeyDown(event)"
-              />
-            </t-list-item>
-          </t-list>
-          <t-splitter ondrag="return this.handleDragSplitter(event)" />
-
-          <t-list id="mainArea" class="flex column fit main-area">
-            <t-list-item id="mainAreaLoading" class="flex column fit main-area-empty current" style="background: white;">
-            </t-list-item>
-            <t-list-item id="mainAreaEmpty" class="flex column fit main-area-empty">
-              <p>左のツリーからファイルを選択し、Enterキー、ダブルクリック、またはこのエリアへドラッグ&ドロップしてファイルを開いてください。</p>
-            </t-list-item>
-            <!-- タブとエディタ -->
-            <t-list-item id="tabViews" class="flex column fit tab-views" />
-          </t-list>
-
-          <t-splitter position="right" ondrag="return this.handleDragSplitter(event)" />
-          <div id="previewArea" class="flex column" style="width: 0px;">
-            <!-- プレビューエリアのメニュー -->
-            <div id="previewMenu" class="menubar flex row" style="position: relative; overflow: hidden;">
-              <i class="material-icons m-icon" style="color: #333;" onclick="return this.handlePreviewRefresh(event)">
-                refresh
-              </i>
-              <i class="material-icons m-icon" style="color: #333; position: absolute; right: 0;" onclick="return this.handlePreviewClose(event)">
-                close
-              </i>
-            </div>
-            <!-- プレビューエリア -->
-            <iframe id="previewFrame" class="flex fit" style="border: none;"></iframe>
+            <i class="material-icons m-icon" style="color: #333; position: absolute; right: 0;" onclick="return this.handlePreviewClose(event)">
+              close
+            </i>
           </div>
+          <!-- プレビューエリア -->
+          <iframe id="previewFrame" class="flex fit" style="border: none;"></iframe>
         </div>
       </div>
+    </div>
     `;
   }
 
@@ -458,16 +458,17 @@ export default class App extends TElement {
             <li><button onclick="this.resolve(1)">1. 「index.html」のみ作成</button></li>
             <li><button onclick="this.resolve(2)">2. 「index.html」、「style.css」、「main.ts」を作成</button></li>
           </ul>
-        `;
+          `;
         }
 
         buttonsTemplate() {
           return `
           <button onclick="return this.handleCancel(event)">キャンセル</button>
-        `;
+          `;
         }
       },
     )();
+    if (!result) return;
 
     await this.createTemplateFiles(result);
   }
@@ -577,10 +578,10 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     event.preventDefault();
     const disabled = this.fileTree.current == null ? 'class="disabled"' : '';
     const value = await createContextMenu(`
-      <div data-value="newFile"><i class="material-icons" style="color: #AAC;">note_add</i>新規ファイル</div>
-      <div data-value="newFolder"><i class="material-icons" style="color: #FB8;">create_new_folder</i>新規フォルダー</div>
-      <div data-value="rename" ${disabled}><i class="material-icons" style="color: #96C;">drive_file_rename_outline</i>名前の変更</div>
-      <div data-value="delete" ${disabled}><i class="material-icons" style="color: #999;">delete</i>削除</div>
+    <div data-value="newFile"><i class="material-icons" style="color: #AAC;">note_add</i>新規ファイル</div>
+    <div data-value="newFolder"><i class="material-icons" style="color: #FB8;">create_new_folder</i>新規フォルダー</div>
+    <div data-value="rename" ${disabled}><i class="material-icons" style="color: #96C;">drive_file_rename_outline</i>名前の変更</div>
+    <div data-value="delete" ${disabled}><i class="material-icons" style="color: #999;">delete</i>削除</div>
     `)(event);
     if (value) await this.command(value);
   }
@@ -732,7 +733,7 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
       ondragstart: (px, py, modal) => {
         // ドラッグ中の半透明アイコン作成
         shadowElem = TElement.createElement(`
-          <div style="position: absolute; text-align: center; opacity: .75;" class="flex column"></div>
+        <div style="position: absolute; text-align: center; opacity: .75;" class="flex column"></div>
         `);
         shadowElem.appendChild(
           targetItem.element.querySelector('.icon').cloneNode(true),
@@ -891,7 +892,9 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
 
     // 現在のプロジェクトを閉じる
     this.tabViewManager.closeAll();
-    this.mainArea.current = this.mainAreaLoading;
+    if (this.mainArea.current === this.tabViews) {
+      this.mainArea.current = this.mainAreaLoading;
+    }
     this.fileManeger.removeAll();
 
     // 読み込み
@@ -910,9 +913,9 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
     event.target.classList.add('selected');
 
     const value = await createContextMenu(`
-      <div data-value="newProject"><i class="material-icons" style="color: #6A6;">library_add</i>新規プロジェクト</div>
-      <div data-value="loadProject"><i class="material-icons" style="color: #C66;">file_open</i>プロジェクトを開く</div>
-      <div data-value="saveProject"><i class="material-icons" style="color: #66C;">save</i>プロジェクトを保存</div>
+    <div data-value="newProject"><i class="material-icons" style="color: #6A6;">library_add</i>新規プロジェクト</div>
+    <div data-value="loadProject"><i class="material-icons" style="color: #C66;">file_open</i>プロジェクトを開く</div>
+    <div data-value="saveProject"><i class="material-icons" style="color: #66C;">save</i>プロジェクトを保存</div>
     `)(event.target);
 
     event.target.classList.remove('selected');
