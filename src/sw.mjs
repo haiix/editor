@@ -69,7 +69,7 @@ class Main {
 
       let fileData = await this.getFileData(root, url);
 
-      if (!fileData) {
+      if (!fileData || !fileData.file) {
         // ファイルが存在せず、拡張子が無いものを「.ts」とみなして再検索
         if (
           url.slice(-1) !== '/' &&

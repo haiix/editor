@@ -158,11 +158,13 @@ export default class TDialog extends TElement {
           event.target.tagName !== 'BUTTON' &&
           typeof this.handleOK === 'function'
         ) {
+          event.preventDefault();
           this.handleOK(event);
         }
         break;
       case 27: // Esc
         if (typeof this.handleCancel === 'function') {
+          event.preventDefault();
           this.handleCancel(event);
         }
         break;
