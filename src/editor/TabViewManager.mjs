@@ -361,6 +361,12 @@ export class TabViewManager {
    * @param {TabView | null} newCurrent
    */
   setCurrent(newCurrent) {
+    if (newCurrent instanceof EditorTabView) {
+      requestAnimationFrame(() => {
+        newCurrent.editor?.focus();
+      });
+    }
+
     if (!newCurrent || newCurrent === this.current) {
       this.current = newCurrent;
       return;
