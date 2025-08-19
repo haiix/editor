@@ -27,6 +27,8 @@ export function createModel(path, content, onChange) {
     monaco.Uri.parse(path),
   );
   model.updateOptions({ tabSize: 2 });
+  // Todo 改行設定が効かないので調べる (現在は保存時に置換するようにしている)
+  // model.setEOL(1); // monaco.editor.EndOfLinePreference.LF
   model.onDidChangeContent(onChange);
   return model;
 }

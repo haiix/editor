@@ -397,7 +397,10 @@ export default class App extends TElement {
       tabViews.map(async (tabView) => {
         if (!tabView.isModified()) return;
 
-        const editorContent = tabView.editor.getValue();
+        // Todo 「.bat」と「.ps2」はCRLFに変換する(?)
+        const editorContent = tabView.editor
+          .getValue()
+          .replaceAll('\r\n', '\n');
 
         const path = tabView.path;
         const type = this.idbFile.getFileType(path);
