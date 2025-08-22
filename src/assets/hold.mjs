@@ -20,13 +20,14 @@ overlay.style.inset = '0';
  * @returns {{ x:number, y:number }}
  */
 export function getPageCoordinate(event) {
-  if (event instanceof TouchEvent) {
-    return {
-      x: event.touches[0]?.clientX ?? 0,
-      y: event.touches[0]?.clientY ?? 0,
-    };
+  // TouchEventはブラウザで実装されていない可能性があるので注意
+  if (event instanceof MouseEvent) {
+    return { x: event.pageX, y: event.pageY };
   }
-  return { x: event.pageX, y: event.pageY };
+  return {
+    x: event.touches[0]?.clientX ?? 0,
+    y: event.touches[0]?.clientY ?? 0,
+  };
 }
 
 /**
