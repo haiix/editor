@@ -215,10 +215,14 @@ export default class App extends TElement {
     this.projectSetting = null;
     this.serviceWorkerRegistration = null;
 
-    this.tabViewManager = new TabViewManager(() => {
-      this.saveTabs();
-      if (this.tabViewManager.tabViews.length === 0) {
-        this.mainArea.current = this.mainAreaEmpty;
+    this.tabViewManager = new TabViewManager(async () => {
+      try {
+        await this.saveTabs();
+        if (this.tabViewManager.tabViews.length === 0) {
+          this.mainArea.current = this.mainAreaEmpty;
+        }
+      } catch (error) {
+        this.onerror(error);
       }
     });
     this.tabViewManager.tabs.setAttribute('class', 'editor-tabs flex row');
@@ -371,7 +375,7 @@ export default class App extends TElement {
     this.projectSetting.tabs = this.tabViewManager.tabViews.map(
       (tabView) => tabView.path,
     );
-    this.projectSetting.currentTab = this.tabViewManager.current.path;
+    this.projectSetting.currentTab = this.tabViewManager.current?.path ?? null;
     await this.idbFile.putWorkSpaceSetting(this.projectSetting);
   }
 
@@ -1058,13 +1062,15 @@ document.body.innerHTML = '<h1>Hello, World!</h1>';
    * プロジェクトのZipファイルをローカルマシンから開く
    */
   async loadProject() {
+    const newProjectSetting = this.idbFile.createDefaultSetting();
     const EZip = await this.fetchEZip();
-    const ezip = new EZip(this.projectSetting);
+    const ezip = new EZip(newProjectSetting);
     const files = await ezip.load();
     if (!files) return;
+    this.projectSetting = newProjectSetting;
     await this.newProject(false);
     await this.addFile(...files);
-    await this.idbFile.putWorkSpaceSetting(this.projectSetting);
+    await this.idbFile.putWorkSpaceSetting(newProjectSetting);
   }
 
   onerror(error) {
