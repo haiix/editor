@@ -275,7 +275,6 @@ export class TabViewManager {
       this.views.append(tabView.view);
       tabView.init();
     }
-    this.setCurrent(tabView);
   }
 
   /**
@@ -379,6 +378,7 @@ export class TabViewManager {
     newCurrent.tab.classList.add('current');
     newCurrent.view.classList.add('current');
     this.current = newCurrent;
+    this.onChangeTabs();
 
     this.refresh();
     this.resizeEditor();

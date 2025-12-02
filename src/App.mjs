@@ -358,11 +358,14 @@ export default class App extends TElement {
 
   /**
    * タブとエディタを追加する
+   * @params {string} path
+   * @params {boolean} toSave 複数タブをまとめて開くときにタブ状態の保存をスキップする場合はtrue
    */
   async openTab(path, toSave = true) {
     this.tabViewManager.open(this.fileManeger.get(path));
 
     if (toSave) {
+      this.tabViewManager.setCurrentByPath(path);
       this.mainArea.current = this.tabViews;
       await this.saveTabs();
     }
@@ -386,8 +389,10 @@ export default class App extends TElement {
     for (const path of this.projectSetting.tabs) {
       await this.openTab(path, false);
     }
+    this.mainArea.current = this.tabViews;
     if (this.projectSetting.currentTab) {
-      await this.openTab(this.projectSetting.currentTab);
+      this.tabViewManager.setCurrentByPath(this.projectSetting.currentTab);
+      await this.openTab(this.projectSetting.currentTab, false);
     } else {
       this.mainArea.current = this.mainAreaEmpty;
     }
