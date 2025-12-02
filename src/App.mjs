@@ -393,6 +393,10 @@ export default class App extends TElement {
     if (this.projectSetting.currentTab) {
       this.tabViewManager.setCurrentByPath(this.projectSetting.currentTab);
       await this.openTab(this.projectSetting.currentTab, false);
+      // importの解決を試みる
+      setTimeout(() => {
+        this.tabViewManager.refresh();
+      }, 1000);
     } else {
       this.mainArea.current = this.mainAreaEmpty;
     }
